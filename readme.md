@@ -52,18 +52,12 @@ cd <仓库目录>
 - `[k8s]`：Kubernetes集群节点，包含：
   - 主节点（`is_master=1`），其中`is_init=1`的节点为初始化节点（第一个主节点）。
   - 工作节点（`is_worker=1`）。
-- `[lb]`：负载均衡节点，`lb_master=1`为MASTER角色，`lb_master=0`为BACKUP角色，通过keepalived实现VIP高可用。
-- `[test]`：可选测试节点（用于执行测试任务）。
 
 示例配置：
 ```ini
 [k8s]
 192.168.0.106 is_master=1 is_worker=1 is_init=1  # 初始化节点（主节点+工作节点）
 192.168.0.116 is_master=1 is_worker=1            # 其他主节点
-
-[lb]
-192.168.0.106 lb_master=1  # 负载均衡主节点
-192.168.0.116 lb_master=0  # 负载均衡备用节点
 ```
 
 ### 3. 安装前脚本准备
