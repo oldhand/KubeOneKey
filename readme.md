@@ -1,4 +1,4 @@
-# 多个linux系统上的Kubernetes自动化部署工具
+# Linux系统上的Kubernetes自动化部署工具
 
 ## 仓库简介
 该仓库是一个基于Ansible的自动化部署工具，专为在多个linux系统上部署Kubernetes（k8s）1.29版本集群设计。通过预设的角色和任务流程，可实现集群环境的快速搭建，提高部署效率和一致性。
