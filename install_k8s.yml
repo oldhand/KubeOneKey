@@ -1,0 +1,11 @@
+---
+- hosts: k8s
+  gather_facts: yes
+  roles:
+    # Prepare os environment
+    - init
+    # Install docker runtime for k8s
+    - docker
+    # Install kubeadm and create k8s cluster
+    - cluster
+

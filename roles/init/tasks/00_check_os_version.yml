@@ -1,0 +1,29 @@
+---
+
+- name: 显示当前主机的系统信息
+  ansible.builtin.debug:
+    msg: |
+      操作系统: {{ ansible_distribution }}
+      版本: {{ ansible_distribution_version }}
+      CPU架构: {{ ansible_architecture }}
+
+- name: 初始化检查结果变量
+  ansible.builtin.set_fact:
+    system_supported: false
+
+- name: 检查是否匹配支持的系统配置
+  ansible.builtin.set_fact:
+    system_supported: true
+  when:
+    - item.name == ansible_distribution
+    - item.version == ansible_distribution_version
+    - item.architecture == ansible_architecture
+  loop: "{{ k8s_os }}"
+
+- name: 验证系统是否被支持
+  ansible.builtin.assert:
+    that:
+      - system_supported
+    success_msg: "系统符合支持列表要求"
+    fail_msg: "系统不在支持列表中，请检查配置"
+

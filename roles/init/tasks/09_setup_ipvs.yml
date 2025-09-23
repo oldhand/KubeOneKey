@@ -1,0 +1,22 @@
+---
+- name: Install ipset and ipvsadm
+  dnf:
+    name: 
+      - ipset
+      - ipvsadm
+    state: present
+  when: ansible_distribution == "OpenEuler"
+
+
+- name: Install ipset and ipvsadm
+  apt:
+    name:
+      - ipset
+      - ipvsadm
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Load modules for ipvs
+  copy:
+    src: modules-ipvs.conf
+    dest: /etc/modules-load.d/ipvs.conf

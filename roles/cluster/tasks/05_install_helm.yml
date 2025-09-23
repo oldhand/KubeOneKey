@@ -1,0 +1,50 @@
+---
+- name: Get helm package
+  get_url:
+    url: "file://{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/helm-v{{ helm_version }}-linux.tar.gz"
+    dest: /tmp/helm-v{{ helm_version }}-linux.tar.gz
+  when: is_master == 1
+
+- name: Untar helm package
+  unarchive:
+    src: /tmp/helm-v{{ helm_version }}-linux.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: is_master == 1
+
+- name: Move helm to bin directory
+  copy: 
+    src: /tmp/linux-arm64/helm
+    dest: /usr/local/bin/helm
+    remote_src: yes
+  when: is_master == 1 and ansible_architecture == "aarch64"
+
+- name: Move helm to bin directory
+  copy:
+    src: /tmp/linux-amd64/helm
+    dest: /usr/local/bin/helm
+    remote_src: yes
+  when: is_master == 1 and ansible_architecture == "x86_64"
+
+- name: Add execute perms to helm
+  shell: |
+    chmod +x /usr/local/bin/helm
+  when: is_master == 1
+
+- name: Clean up helm untar directory
+  file:
+    path: /tmp/linux-arm64
+    state: absent
+  when: is_master == 1 and ansible_architecture == "aarch64"
+
+- name: Clean up helm untar directory
+  file:
+    path: /tmp/linux-amd64
+    state: absent
+  when: is_master == 1 and ansible_architecture == "x86_64"
+
+- name: Clean up helm package
+  file:
+    path: /tmp/helm-v{{ helm_version }}-linux.tar.gz
+    state: absent
+  when: is_master == 1

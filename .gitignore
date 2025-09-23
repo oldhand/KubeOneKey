@@ -1,0 +1,19 @@
+ 
+# Log file
+*.log
+
+
+# Intellij
+*.ipr
+*.iml
+*.iws
+.idea/
+
+# Maven
+target/
+
+
+# Mac
+.DS_Store
+pkgcache.bin
+srcpkgcache.bin

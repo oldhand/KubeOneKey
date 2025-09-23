@@ -1,0 +1,6 @@
+[LocalOpenEuler]
+name=Local openEuler 22.03 LTS Repository
+baseurl=file:///home/packages/
+enabled=1
+gpgcheck=0
+

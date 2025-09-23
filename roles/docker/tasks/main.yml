@@ -1,0 +1,8 @@
+---
+- include_tasks: 01_prepare.yml
+# 先安装 Docker 基础组件
+- include_tasks: 01_install_docker.yml
+# 再安装并配置 cri-dockerd
+- include_tasks: 01_install_cri_dockerd.yml
+# 最后配置 Docker 守护进程
+- include_tasks: 02_configure_docker.yml

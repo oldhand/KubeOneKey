@@ -1,0 +1,31 @@
+---
+
+# 首先收集系统信息，确保获取到SELinux状态
+- name: Gather SELinux facts
+  setup:
+    filter: 'ansible_selinux'
+  tags: selinux
+  when: ansible_distribution == "OpenEuler"
+
+# 检查ansible_selinux是否已定义，未定义时设置默认值
+- name: Set default SELinux status if undefined
+  set_fact:
+    ansible_selinux: {"status": "disabled"}
+  when: ansible_selinux is undefined and ansible_distribution == "OpenEuler"
+
+# Disable SELinux
+- name: Switch selinux to permissive
+  command: setenforce 0
+  when: ansible_selinux.status == 'enabled' and ansible_distribution == "OpenEuler"
+  ignore_errors: true
+
+- name: Set selinux to disabled when system boot
+  # replace: 
+  #   path: /etc/selinux/config
+  #   regexp: "^SELINUX=enforcing$"
+  #   replace: "SELINUX=disabled"
+  shell: |
+    [ -f /etc/selinux/config ] && \
+    sed -i 's/^SELINUX=.*$/SELINUX=disabled/' /etc/selinux/config
+  when: ansible_selinux.status == 'enabled' and ansible_distribution == "OpenEuler"
+  ignore_errors: true

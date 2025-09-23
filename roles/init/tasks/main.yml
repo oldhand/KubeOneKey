@@ -1,0 +1,14 @@
+---
+- include_tasks: 00_check_os_version.yml
+- include_tasks: 00_distribute_packages.yml
+- include_tasks: 01_setup_yum.yml
+- include_tasks: 01_setup_apt.yml
+- include_tasks: 02_install_pkgs.yml
+- include_tasks: 03_setup_ntp.yml
+- include_tasks: 04_disable_selinux.yml
+- include_tasks: 05_disable_firewall.yml
+- include_tasks: 06_disable_swap.yml
+- include_tasks: 07_hosts_dns.yml
+- include_tasks: 08_import_ca_cert.yml
+- include_tasks: 09_setup_ipvs.yml
+- include_tasks: 99_fix_bugs.yml

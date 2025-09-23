@@ -1,0 +1,48 @@
+---
+
+- name: Gather service facts
+  service_facts:  # 收集系统服务信息
+
+
+- name: Install pkgs
+  dnf: 
+    name: 
+      # Tools
+      - tar
+      - telnet
+      - nc
+      - bash-completion
+      - openvswitch
+      # 
+      # For runc
+      - libseccomp
+      # Fixed: Aborting, target uses selinux but python bindings (libselinux-python) aren't installed!
+      - python3-libselinux
+      # Fixed: ModuleNotFoundError: No module named 'gi'
+      - python3-gobject
+    state: present
+  when: ansible_distribution == "OpenEuler"
+
+
+- name: 安装依赖包
+  apt:
+    name:
+      - net-tools
+      - sshpass
+      - curl
+      - wget
+      - git
+      - tar
+      - telnet
+      - bash-completion
+      - seccomp
+      - chrony
+      - ipset
+      - libipset13
+      - ipvsadm
+      - apt-transport-https
+      - ca-certificates
+      - openvswitch-common
+      - openvswitch-switch
+    state: present
+  when: ansible_distribution == "Ubuntu"

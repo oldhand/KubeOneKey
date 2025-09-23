@@ -1,0 +1,47 @@
+---
+# Disable firewall
+- name: Gather service facts
+  service_facts:  # 收集系统服务信息
+
+
+- name: Disable firewalld and iptables service
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items:
+    - firewalld.service
+    - iptables.service
+  when: "item in services"  # 仅当服务存在时执行
+  ignore_errors: true
+
+- name: Check if iptables exists
+  command: which iptables
+  register: iptables_exists
+  failed_when: no
+  changed_when: no
+
+- name: Flush iptables rules
+  command: iptables -F
+  when: iptables_exists.rc == 0  # 仅当iptables存在时执行
+  ignore_errors: true
+
+
+- name: Stop and disable AppArmor service
+  service:
+    name: apparmor
+    state: stopped
+    enabled: no
+  ignore_errors: true
+
+- name: Unload AppArmor kernel module
+  modprobe:
+    name: apparmor
+    state: absent
+  ignore_errors: true
+  when: ansible_distribution == "Ubuntu"
+
+- name: Remove AppArmor profiles
+  command: aa-teardown
+  ignore_errors: true
+  when: ansible_distribution == "Ubuntu"

@@ -1,0 +1,62 @@
+---
+- name: Clean up kubernetes
+  shell: |
+     kubeadm reset --force
+  ignore_errors: true
+
+- name: Init cluster
+  shell: |
+    kubeadm init \
+      --kubernetes-version {{ k8s_version_release }} \
+      --pod-network-cidr {{ pod_cidr }} \
+      --service-cidr {{ service_cidr }} \
+      --control-plane-endpoint {{ control_plane_endpoint }} \
+      --apiserver-advertise-address {{ inventory_hostname }} \
+      --cri-socket {{ cri_socket }} \
+      --image-repository {{ image_repository }} \
+      --ignore-preflight-errors=ImagePull \
+      --upload-certs > /tmp/kubeadm-init.log 2>&1
+  when: (is_init is defined) and (is_init == 1)
+
+- name: Get kubeadm init output log file
+  fetch:
+    src: /tmp/kubeadm-init.log
+    dest: /tmp/
+    flat: yes
+  when: (is_init is defined) and (is_init == 1)
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/builtin/regex_search_filter.html
+- name: Get kubectl join information from output log file
+  set_fact: 
+    certificate_key: "{{ lookup('file', '/tmp/kubeadm-init.log') | regex_search('\\--certificate-key ([a-z0-9.:]+)', '\\1') }}"
+    discovery_token_ca_cert_hash: "{{ lookup('file', '/tmp/kubeadm-init.log') | regex_search('\\--discovery-token-ca-cert-hash ([a-z0-9.:]+)', '\\1') }}"
+    kubeadm_token: "{{ lookup('file', '/tmp/kubeadm-init.log') | regex_search('\\--token ([a-z0-9.]+)', '\\1') }}"
+  when: (is_init is defined) and (is_init == 1)
+
+- name: 生成集群加入变量文件（初始化节点）
+  copy:
+    content: |
+      # 集群加入所需变量（从 kubeadm init 日志提取）
+      kubeadm_token: "{{ kubeadm_token[0] }}"
+      discovery_token_ca_cert_hash: "{{ discovery_token_ca_cert_hash[0] }}"
+      certificate_key: "{{ certificate_key[0] }}"
+    dest: /tmp/k8s_join_vars.yml  # 初始化节点本地的变量文件
+    mode: '0644'  # 确保其他用户可读取
+  when: (is_init is defined) and (is_init == 1)
+
+- name: 拉取变量文件到控制节点
+  fetch:
+    src: /tmp/k8s_join_vars.yml
+    dest: /tmp/k8s_join_vars.yml  # 控制节点存储路径（覆盖同名文件）
+    flat: yes  # 禁用默认的“主机IP/路径”目录结构，直接存为 /tmp/k8s_join_vars.yml
+  when: (is_init is defined) and (is_init == 1)
+
+# install_k8s.yml 新增任务（放在“初始化集群”之后，“添加主节点/工作节点”之前）
+- name: 向所有节点分发集群加入变量文件
+  copy:
+    src: /tmp/k8s_join_vars.yml  # 控制节点上的变量文件（步骤1拉取的）
+    dest: /tmp/k8s_join_vars.yml  # 目标节点的存储路径
+    mode: '0644'
+  when:
+    - (is_master == 1) or (is_worker == 1)  # 只分发给主节点和工作节点
+    - inventory_hostname != hostvars | dict2items | selectattr('value.is_init', 'defined') | selectattr('value.is_init', 'eq', 1) | map(attribute='key') | first  # 排除初始化节点（已存在该文件）

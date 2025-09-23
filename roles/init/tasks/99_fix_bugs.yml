@@ -1,0 +1,44 @@
+---
+# 清理 Containerd 残留（如果存在）
+- name: Stop and disable containerd
+  systemd:
+    name: containerd
+    state: stopped
+    enabled: no
+  ignore_errors: true
+
+- name: Remove containerd config and binaries
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/containerd
+    - /usr/local/bin/containerd
+  ignore_errors: true
+
+
+# Fix sysctl bug in openEuler
+- name: Check if /etc/sysctl.conf exists
+  stat:
+    path: /etc/sysctl.conf
+  register: sysctl_conf_stat
+
+- name: Copy sysctl.conf to 99-sysctl.conf (if exists)
+  copy:
+    src: /etc/sysctl.conf
+    dest: /etc/sysctl.d/99-sysctl.conf
+    remote_src: yes
+  when: sysctl_conf_stat.stat.exists  # 仅当文件存在时执行
+  ignore_errors: true
+
+- name: Delete sysctl.conf (if exists)
+  file:
+    path: /etc/sysctl.conf
+    state: absent
+  when: sysctl_conf_stat.stat.exists  # 仅当文件存在时执行
+
+# Mask tmp.mount
+- name: Mask tmp.mount
+  systemd:
+    name: tmp.mount
+    masked: true

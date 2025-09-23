@@ -1,0 +1,87 @@
+---
+# 从本地tgz包安装Docker 25.0.0
+- name: 确认本地Docker压缩包存在
+  stat:
+    path: "{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/docker-25.0.0.tgz"
+  delegate_to: localhost
+  register: local_docker_tgz
+
+- name: 校验压缩包是否存在
+  ansible.builtin.assert:
+    that:
+      - local_docker_tgz.stat.exists
+    success_msg: "Docker压缩包存在: {{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/docker-25.0.0.tgz"
+    fail_msg: "未找到Docker压缩包，请将docker-25.0.0.tgz放置在{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}目录下"
+
+- name: 将Docker压缩包上传到目标节点
+  copy:
+    src: "{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/docker-25.0.0.tgz"
+    dest: "/tmp/docker-25.0.0.tgz"
+    mode: '0644'
+
+- name: 创建Docker安装目录
+  file:
+    path: /usr/local/docker
+    state: directory
+    mode: '0755'
+
+- name: 解压Docker压缩包到安装目录
+  unarchive:
+    src: /tmp/docker-25.0.0.tgz
+    dest: /usr/local/docker
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1  # 移除压缩包内的顶层目录
+
+- name: 创建软链接到系统PATH
+  file:
+    src: "/usr/local/docker/{{ item }}"
+    dest: "/usr/bin/{{ item }}"
+    state: link
+    force: yes
+  with_items:
+    - docker
+    - dockerd
+    - containerd
+    - containerd-shim
+    - runc
+    - docker-init
+    - docker-proxy
+
+- name: 创建Docker systemd服务文件
+  copy:
+    content: |
+      [Unit]
+      Description=Docker Application Container Engine
+      Documentation=https://docs.docker.com
+      After=network-online.target firewalld.service
+      Wants=network-online.target
+
+      [Service]
+      Type=notify
+      ExecStart=/usr/bin/dockerd --data-root /var/lib/docker
+      ExecReload=/bin/kill -s HUP $MAINPID
+      LimitNOFILE=infinity
+      LimitNPROC=infinity
+      LimitCORE=infinity
+      TimeoutStartSec=0
+      Restart=always
+      StartLimitBurst=3
+      StartLimitInterval=60s
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/docker.service
+    mode: '0644'
+
+- name: 启动并启用Docker服务
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: 清理临时文件
+  file:
+    path: /tmp/docker-25.0.0.tgz
+    state: absent

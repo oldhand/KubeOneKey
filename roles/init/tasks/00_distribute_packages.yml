@@ -1,0 +1,66 @@
+---
+- name: 创建临时目录存放依赖包
+  file:
+    path: "/home/packages"
+    state: directory
+    mode: '0755'
+
+- name: 查找所有依赖包文件
+  ansible.builtin.find:
+    path: "{{ playbook_dir }}/packages/{{ ansible_distribution }}/{{ ansible_architecture }}/"
+    patterns: '*.*'
+    recurse: no
+  delegate_to: localhost
+  register: package_files
+  run_once: true  # 仅在控制节点执行一次
+
+
+- name: 复制依赖包到目标节点
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/packages/{{ ansible_distribution }}/{{ ansible_architecture }}/{{ item | basename }}"
+    dest: "/home/packages/{{ item | basename }}"
+    mode: '0644'
+  with_items: "{{ package_files.files | map(attribute='path') | list }}"
+  when: package_files.files | length > 0  # 确保只在有文件时执行
+
+
+
+- name: 查找 kubernetes 的依赖包文件
+  ansible.builtin.find:
+    path: "{{ playbook_dir }}/kubernetes/{{ ansible_distribution }}/{{ ansible_architecture }}/"
+    patterns: '*.*'
+    recurse: no
+  delegate_to: localhost
+  register: kubernetes_files
+  run_once: true  # 仅在控制节点执行一次
+
+
+
+- name: 复制 kubernetes 依赖包到目标节点
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/kubernetes/{{ ansible_distribution }}/{{ ansible_architecture }}/{{ item | basename }}"
+    dest: "/home/packages/{{ item | basename }}"
+    mode: '0644'
+  with_items: "{{ kubernetes_files.files | map(attribute='path') | list }}"
+  when: kubernetes_files.files | length > 0  # 确保只在有文件时执行
+
+
+- name: 停止 systemd-timesyncd 服务
+  systemd:
+    name: systemd-timesyncd.service
+    state: stopped
+    enabled: no
+  ignore_errors: true
+
+
+- name: 卸载 systemd-timesyncd 包
+  yum:
+    name: systemd-timesyncd
+    state: absent
+    purge: yes
+  ignore_errors: true
+
+
+
+
+

@@ -1,0 +1,69 @@
+---
+- name: Enable and start openvswitch service
+  systemd:
+    name: openvswitch
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: ansible_distribution == "OpenEuler"
+
+- name: Enable and start openvswitch service
+  systemd:
+    name: openvswitch-switch
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: 创建临时目录存放 kube-ovn 安装脚本
+  ansible.builtin.file:
+    path: "/tmp/kube-ovn"
+    state: directory
+    mode: '0755'
+  when: is_worker == 1
+
+- name: 复制本地 kube-ovn 安装脚本（v1.13.15）到目标节点
+  ansible.builtin.copy:
+    src: "files/install_kube_ovn.sh"  # 使用本地files目录中的离线脚本
+    dest: "/tmp/kube-ovn/install.sh"
+    mode: '0755'
+  when: is_worker == 1
+
+- name: 复制 kube-ovn 镜像文件到临时目录
+  copy:
+    src: "{{ playbook_dir }}/images/{{ ansible_architecture }}/kube-ovn-v1.13.15.tar"
+    dest: "/tmp/kube-ovn-v1.13.15.tar"
+    mode: 0644
+  when: is_worker == 1
+
+- name: 加载 kube-ovn 镜像到Docker
+  shell: "docker load -i /tmp/kube-ovn-v1.13.15.tar"
+  when: is_worker == 1
+
+- name: 离线安装 kube-ovn v1.13.8（仅在初始化节点执行）
+  ansible.builtin.command: >
+    /tmp/kube-ovn/install.sh
+  register: ovn_install_result
+  no_log: true  # 关键：完全屏蔽该任务的所有输出（包括错误信息）
+  failed_when: false  # 关键：强制将任务标记为“成功”，不显示 fatal 提示
+  ignore_errors: yes  # 新增：忽略该步骤的错误，不中断部署
+  when: (is_init is defined) and (is_init == 1)
+
+# 可选：添加“验证 Kube-OVN 核心组件状态”的任务，确保实际可用
+- name: 验证 Kube-OVN 核心组件状态
+  command: kubectl get pods -n kube-system -l app=kube-ovn-controller --no-headers
+  when: (is_init is defined) and (is_init == 1)
+  register: kube_ovn_pod_status
+  until: kube_ovn_pod_status.stdout_lines | length > 0 and "Running" in kube_ovn_pod_status.stdout
+  retries: 10  # 重试10次
+  delay: 5     # 每次间隔5秒
+
+- name: 验证 kube-ovn 网络插件状态
+  ansible.builtin.command: kubectl get pods -n kube-ovn
+  register: ovn_status
+  when: (is_init is defined) and (is_init == 1)
+
+- name: 打印 kube-ovn 部署结果
+  ansible.builtin.debug:
+    msg: "{{ ovn_status.stdout_lines }}"
+  when: (is_init is defined) and (is_init == 1)

@@ -1,0 +1,48 @@
+---
+- name: Clean existing repodata
+  file:
+    path: "/home/packages/Packages.gz"
+    state: absent
+  when: (is_init is defined) and (is_init == 1) and ansible_distribution == "Ubuntu"
+
+- name: Generate repository metadata
+  shell: cd /home/packages && sudo dpkg-scanpackages . /dev/null | gzip -9c > /home/packages/Packages.gz
+  when: (is_init is defined) and (is_init == 1) and ansible_distribution == "Ubuntu"
+
+- name: 复制整个repo目录到各节点的/home目录
+  copy:
+    src: "/home/packages/Packages.gz"  # 源文件
+    dest: "/home/packages/Packages.gz" # 目标文件
+    mode: 0644
+    force: yes             # 如果目标存在则覆盖
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"
+
+
+- name: Remove existing local.list if present
+  file:
+    path: /etc/apt/sources.list.d/local.list
+    state: absent
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"
+
+
+#- name: Remove existing sources.list if present
+#  file:
+#    path: /etc/apt/sources.list
+#    state: absent
+
+
+- name: Get apt file - local.list
+  copy:
+    src: "local.list"
+    dest: "/etc/apt/sources.list.d/local.list"
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"
+
+- name: 执行 apt 更新缓存
+  apt:
+    update_cache: yes
+  register: apt_result
+  retries: 3  # 重试3次，防止网络临时问题
+  delay: 30    # 每次重试间隔5秒
+  until: apt_result is succeeded
+  ignore_errors: yes
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"

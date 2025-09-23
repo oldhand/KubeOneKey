@@ -1,0 +1,13 @@
+---
+- name: 加载集群加入变量文件（工作节点）
+  include_vars:
+    file: /tmp/k8s_join_vars.yml  # 加载本地变量文件
+    name: k8s_join  # 变量前缀（后续用 k8s_join.kubeadm_token 引用）
+  when: (is_master == 0) and (is_worker == 1)
+
+- name: Add worker to cluster
+  shell: |
+    kubeadm join {{ control_plane_endpoint }} \
+      --token {{ k8s_join.kubeadm_token }} \
+      --discovery-token-ca-cert-hash {{ k8s_join.discovery_token_ca_cert_hash }}
+  when: (is_master == 0) and (is_worker == 1)

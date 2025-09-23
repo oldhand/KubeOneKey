@@ -1,0 +1,97 @@
+---
+- name: 确认本地cri-dockerd压缩包存在
+  stat:
+    path: "{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/cri-dockerd-0.3.4.tgz"
+  delegate_to: localhost
+  register: local_cri_dockerd_tgz
+
+
+- name: 校验cri-dockerd压缩包是否存在
+  ansible.builtin.assert:
+    that:
+      - local_cri_dockerd_tgz.stat.exists
+    success_msg: "cri-dockerd压缩包存在: {{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/cri-dockerd-0.3.4.tgz"
+    fail_msg: "未找到cri-dockerd压缩包，请将cri-dockerd-0.3.4.tgz放置在{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}目录下"
+
+- name: 将cri-dockerd压缩包上传到目标节点
+  copy:
+    src: "{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/cri-dockerd-0.3.4.tgz"
+    dest: "/tmp/cri-dockerd-0.3.4.tgz"
+    mode: '0644'
+
+- name: 创建cri-dockerd临时解压目录
+  file:
+    path: /tmp/cri-dockerd
+    state: directory
+    mode: '0755'
+
+- name: 解压cri-dockerd压缩包
+  unarchive:
+    src: /tmp/cri-dockerd-0.3.4.tgz
+    dest: /tmp/cri-dockerd
+    remote_src: yes
+
+- name: 查找解压后的cri-dockerd二进制文件
+  find:
+    path: /tmp/cri-dockerd
+    name: cri-dockerd
+    recurse: yes
+    file_type: file
+  register: cri_dockerd_binary
+
+- name: 将cri-dockerd二进制文件移动到系统目录
+  command: "mv {{ cri_dockerd_binary.files[0].path }} /usr/local/bin/cri-dockerd"
+  args:
+    creates: /usr/local/bin/cri-dockerd
+
+- name: 设置cri-dockerd执行权限
+  file:
+    path: /usr/local/bin/cri-dockerd
+    mode: '0755'
+
+- name: 创建systemd服务配置目录
+  file:
+    path: /etc/systemd/system
+    state: directory
+    mode: '0755'
+
+- name: 配置cri-dockerd systemd服务
+  copy:
+    content: |
+      [Unit]
+      Description=CRI Interface for Docker
+      Documentation=https://github.com/Mirantis/cri-dockerd
+      After=network.target docker.service
+      Requires=docker.service
+
+      [Service]
+      Type=notify
+      ExecStart=/usr/local/bin/cri-dockerd \
+        --container-runtime-endpoint unix:///var/run/cri-dockerd.sock \
+        --pod-infra-container-image={{ image_repository }}/pause:3.9 \
+        --network-plugin=cni
+      Restart=always
+      RestartSec=5
+      LimitNOFILE=infinity
+      LimitNPROC=infinity
+      LimitCORE=infinity
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/cri-dockerd.service
+    mode: '0644'
+
+- name: 启动并设置cri-dockerd开机自启
+  systemd:
+    name: cri-dockerd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: 清理cri-dockerd临时文件
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /tmp/cri-dockerd-0.3.4.tgz
+    - /tmp/cri-dockerd

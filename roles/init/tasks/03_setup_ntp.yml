@@ -1,0 +1,38 @@
+---
+- name: Remove ntp package
+  dnf:
+    name: 
+      - ntp
+    state: absent
+  when: ansible_distribution == "OpenEuler"
+
+- name: Install chrony package
+  dnf:
+    name: chrony
+    state: present
+  when: ansible_distribution == "OpenEuler"
+
+- name: Remove ntp package
+  apt:
+    name:
+      - ntp
+    state: absent
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install chrony package
+  apt:
+    name: chrony
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure chronyd service
+  template:
+    src: chrony.j2
+    dest: /etc/chrony.conf
+
+- name: Restart chronyd.service
+  systemd:
+    name: chronyd.service
+    state: restarted
+    enabled: yes
+

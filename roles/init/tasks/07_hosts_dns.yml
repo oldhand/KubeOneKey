@@ -1,0 +1,43 @@
+---
+
+# Add host record to /etc/hosts
+- name: Add host record
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "^{{ item.ip }}"
+    line: "{{ item.ip }} {{ item.hostname }}"
+    state: present
+  with_items: "{{ k8s_master }}"
+
+# 确保/etc/hostname文件同步更新（部分系统依赖此文件）
+- name: 更新/etc/hostname文件
+  ansible.builtin.lineinfile:
+    path: /etc/hostname
+    regexp: '^.*$'  # 替换文件中所有内容
+    line: "{{ item.hostname }}"
+    state: present
+  with_items: "{{ k8s_master }}"
+  when: inventory_hostname == item.ip
+
+# 设置主机名（新增任务）
+- name: Set hostname to defined value
+  command: "sudo hostnamectl set-hostname {{ item.hostname }}"
+  with_items: "{{ k8s_master }}"
+  when: inventory_hostname == item.ip  # 仅对当前节点执行对应的主机名设置
+
+
+- name: Configure DNS servers in resolv.conf
+  lineinfile:
+    path: /etc/resolv.conf
+    regexp: '^nameserver {{ item }}'
+    line: 'nameserver {{ item }}'
+    state: present
+  with_items: "{{ dns_server }}"
+
+# Set usedns=no when DNS is configured
+- name: Disable sshd's usedns 
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^UseDNS.*'
+    line: 'UseDNS no'
+    state: present

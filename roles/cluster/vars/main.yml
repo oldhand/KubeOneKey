@@ -1,0 +1,8 @@
+---
+k8s_version_release: v1.29.3
+pod_cidr: 192.169.0.0/16
+service_cidr: 172.23.0.0/17
+cri_socket: "unix:///var/run/cri-dockerd.sock"
+image_repository: "registry.cn-hangzhou.aliyuncs.com/google_containers"  # 与cluster角色保持一致
+helm_version: 3.15.0
+control_plane_endpoint: "192.168.0.135:6443"

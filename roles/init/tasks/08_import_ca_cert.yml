@@ -1,0 +1,46 @@
+---
+# Import ca certificates (qwer.com)
+
+
+- name: Ensure CA certificate directory exists
+  file:
+    path: /etc/pki/ca-trust/source/anchors/
+    state: directory
+    mode: '0755'
+  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+
+- name: Copy ca certificates to host
+  copy:
+    src: cacert.pem
+    dest: /etc/pki/ca-trust/source/anchors/cacert.pem
+  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+
+- name: Update ca cert cache
+  shell: update-ca-trust
+  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+
+
+- name: Ensure ca-certificates package is installed
+  apt:
+    name: ca-certificates
+    state: present
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: 创建Ubuntu CA证书目录（如果不存在）
+  file:
+    path: /usr/local/share/ca-certificates/
+    state: directory
+    mode: '0755'
+  when: ansible_distribution == "Ubuntu"
+
+- name: 复制CA证书到Ubuntu系统
+  copy:
+    src: cacert.pem
+    dest: /usr/local/share/ca-certificates/cacert.pem
+    mode: '0644'
+  when: ansible_distribution == "Ubuntu"
+
+- name: 更新Ubuntu CA证书缓存
+  shell: update-ca-certificates
+  when: ansible_distribution == "Ubuntu"

@@ -1,0 +1,10 @@
+---
+# Disable swap
+- name: Turn off all swap
+  command: swapoff -a
+
+- name: Comment the swap partition line in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*swap.*)$'
+    replace: '# \1'

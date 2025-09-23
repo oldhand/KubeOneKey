@@ -1,0 +1,34 @@
+---
+# 创建 Docker 配置目录
+- name: Create Docker config directory
+  file:
+    path: /etc/docker
+    state: directory
+
+# 配置 Docker 守护进程（与 Kubernetes 兼容）
+- name: Configure Docker daemon
+  copy:
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m"
+        },
+        "storage-driver": "overlay2",
+        "registry-mirrors": ["http://registry.cn-hangzhou.aliyuncs.com/google_containers"]
+      }
+    dest: /etc/docker/daemon.json
+
+# 重启 Docker 使配置生效
+- name: Restart Docker service
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes
+
+# 启动并启用 cri-dockerd（Kubernetes 适配 Docker 的关键组件）
+- name: Start and enable cri-dockerd
+  systemd:
+    name: cri-dockerd
+    state: started
+    enabled: yes

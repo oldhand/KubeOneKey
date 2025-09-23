@@ -1,0 +1,23 @@
+---
+- name: 加载集群加入变量文件（其他主节点）
+  include_vars:
+    file: /tmp/k8s_join_vars.yml
+    name: k8s_join
+  when: (is_master == 1) and (is_init is undefined)  # 主节点且非初始化节点
+
+- name: Add other master to cluster
+  shell: |
+    kubeadm join {{ control_plane_endpoint }} \
+      --token {{ k8s_join.kubeadm_token }} \
+      --discovery-token-ca-cert-hash {{ k8s_join.discovery_token_ca_cert_hash }} \
+      --control-plane \
+      --certificate-key {{ k8s_join.certificate_key }}
+  when: (is_master == 1) and (is_init is undefined)
+
+- name: Create kube config for all master
+  shell: |
+    mkdir -p $HOME/.kube && \
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config && \
+    kubectl completion bash > /etc/bash_completion.d/kubectl
+  when: is_master == 1

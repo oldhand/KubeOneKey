@@ -1,0 +1,17 @@
+---
+ntp_server: 192.168.0.135
+http_server: 192.168.0.135
+dns_server:
+  - 114.114.114.114
+  - 114.114.115.115
+  - 8.8.8.8
+k8s_version: 1.29
+nic_name: "ens33"
+k8s_master:
+  - { ip: "192.168.0.135", hostname: "oe2203m01" }
+
+k8s_os:
+  - { name: "Ubuntu", version: "22.04", architecture: "x86_64" }
+  - { name: "openEuler", version: "22.03", architecture: "x86_64" }
+  - { name: "openEuler", version: "22.03", architecture: "aarch64" }
+
