@@ -37,7 +37,7 @@ if [ "$cpu_arch" = "x86_64" ]; then
      unzip $PWD/images/x86_64/images.zip -d $PWD/images/x86_64/
      rm -fr $PWD/images/x86_64/images.zip
    fi
-elif [ "$os_name" = "aarch64" ]; then
+elif [ "$cpu_arch" = "aarch64" ]; then
   if [ ! -f "images/aarch64/kube-apiserver-v1.29.3.tar" ]; then
      cat $PWD/images/aarch64/images.zip.001 $PWD/images/aarch64/images.zip.002 $PWD/images/aarch64/images.zip.003 $PWD/images/aarch64/images.zip.004 > $PWD/images/aarch64/images.zip
      unzip $PWD/images/aarch64/images.zip -d $PWD/images/aarch64/
