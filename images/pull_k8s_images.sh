@@ -7,8 +7,8 @@ KUBE_OVN_REGISTRY="docker.m.daocloud.io/kubeovn"
 
 # 定义需要拉取的镜像列表 (名称:版本)
 IMAGES=(
-    "coredns:v1.11.1"
-    "etcd:3.5.16-0"
+    "coredns:v1.10.1"
+    "etcd:3.5.9-0"
     "kube-apiserver:v1.29.3"
     "kube-controller-manager:v1.29.3"
     "kube-proxy:v1.29.3"
