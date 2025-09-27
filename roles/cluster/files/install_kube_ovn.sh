@@ -55,6 +55,7 @@ fi
 # debug
 DEBUG_WRAPPER=${DEBUG_WRAPPER:-}
 RUN_AS_USER=65534 # run as nobody
+RUN_AS_USER=0 # run as root
 if [ "$ENABLE_OVN_IPSEC" = "true" -o -n "$DEBUG_WRAPPER" ]; then
   RUN_AS_USER=0
 fi
@@ -4358,11 +4359,16 @@ spec:
           - --ovsdb-inactivity-timeout=$OVSDB_INACTIVITY_TIMEOUT
           securityContext:
             runAsUser: ${RUN_AS_USER}
-            privileged: false
+            runAsGroup: 0
+            privileged: true
+            allowPrivilegeEscalation: true
             capabilities:
               add:
                 - NET_BIND_SERVICE
                 - NET_RAW
+                - NET_ADMIN
+                - SYS_ADMIN
+                - ALL
           env:
             - name: ENABLE_SSL
               value: "$ENABLE_SSL"
@@ -4547,7 +4553,8 @@ spec:
           - --set-vxlan-tx-off=$SET_VXLAN_TX_OFF
         securityContext:
           runAsUser: 0
-          privileged: false
+          privileged: true
+          allowPrivilegeEscalation: true
           capabilities:
             add:
               - NET_ADMIN
@@ -4556,6 +4563,7 @@ spec:
               - SYS_ADMIN
               - SYS_NICE
               - SYS_PTRACE
+              - ALL
         env:
           - name: ENABLE_SSL
             value: "$ENABLE_SSL"
