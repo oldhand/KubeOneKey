@@ -1,4 +1,12 @@
 ---
+- name: "创建 CNI 配置目录"
+  ansible.builtin.file:
+    path: "/etc/cni/net.d/"  # CNI配置固定目录，不可修改
+    state: directory
+    mode: '0755'             # 所有者可读写执行，其他用户只读（符合安全规范）
+    owner: root              # 确保root为所有者，避免权限混乱
+    group: root
+
 - name: 卸载 openvswitch package
   yum:
     name: openvswitch
@@ -10,15 +18,6 @@
     name: openvswitch
     state: present
   when: (ansible_distribution in ["OpenEuler", "CentOS"])
-
-- name: "创建 CNI 配置目录"
-  ansible.builtin.file:
-    path: "/etc/cni/net.d/"  # CNI配置固定目录，不可修改
-    state: directory
-    mode: '0755'             # 所有者可读写执行，其他用户只读（符合安全规范）
-    owner: root              # 确保root为所有者，避免权限混乱
-    group: root
-
 
 - name: "创建 OVS/OVN 目录"
   ansible.builtin.file:
@@ -36,6 +35,7 @@
     - /etc/ovn
     - /etc/origin/openvswitch
     - /etc/origin/ovn
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Enable and start openvswitch service
   systemd:
