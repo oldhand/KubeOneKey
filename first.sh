@@ -13,10 +13,12 @@ echo "CPU架构: $cpu_arch"
 # 仅在 openEuler 系统上禁用 Swap
 if [ "$os_name" = "openEuler" ]; then
    rpm -ivh $(pwd)/packages/$os_name/$cpu_arch/*.rpm --force --nodeps
+elif [ "$os_name" = "CentOS" ]; then
+   rpm -ivh $(pwd)/packages/$os_name/$cpu_arch/*.rpm --force --nodeps
 elif [ "$os_name" = "Ubuntu" ]; then
    sudo dpkg -i ./packages/$os_name/$cpu_arch/*.deb
 fi
 
 ansible-galaxy collection install $(pwd)/kubernetes/kubernetes-core-6.1.0.tar.gz --force
 
-pip install --no-index --find-links=$(pwd)/pip kubernetes PyYAML
+pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML

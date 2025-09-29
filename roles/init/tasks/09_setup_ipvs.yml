@@ -1,11 +1,11 @@
 ---
 - name: Install ipset and ipvsadm
-  dnf:
+  yum:
     name: 
       - ipset
       - ipvsadm
     state: present
-  when: ansible_distribution == "OpenEuler"
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 - name: Install ipset and ipvsadm

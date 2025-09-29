@@ -3,7 +3,7 @@
   file:
     path: "/home/packages/repodata"
     state: absent
-  when: (is_init is defined) and (is_init == 1) and ansible_distribution == "OpenEuler"
+  when: (is_init is defined) and (is_init == 1) and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 
@@ -12,11 +12,17 @@
   loop:
     - createrepo_c-0.17.6-1.oe2203.aarch64.rpm
     - drpm-0.5.0-2.oe2203.aarch64.rpm
-  when: ansible_distribution == "OpenEuler"  
+  when: ansible_distribution == "OpenEuler"
+
+- name: 安装所需依赖包
+  shell: "rpm -ivh /home/packages/{{ item }} --force --nodeps"
+  loop:
+    - createrepo-0.9.9-28.el7.noarch.rpm
+  when: ansible_distribution == "CentOS"
 
 - name: Generate repository metadata
   shell: createrepo --database /home/packages/
-  when: (is_init is defined) and (is_init == 1) and ansible_distribution == "OpenEuler"  
+  when: (is_init is defined) and (is_init == 1) and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Delete existed files in directory
   file: 
@@ -26,7 +32,7 @@
   loop:
     - absent
     - directory
-  when: ansible_distribution == "OpenEuler"
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 #- name: Remove existing local.repo if present
 #  file:
@@ -42,7 +48,7 @@
   copy:
     src: "local.repo"
     dest: "/etc/yum.repos.d/local.repo"
-  when: ansible_distribution == "OpenEuler"  
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 - name: 执行 yum makecache 更新缓存
@@ -52,4 +58,4 @@
   retries: 3  # 重试3次，防止网络临时问题
   delay: 5    # 每次重试间隔5秒
   until: yum_result is succeeded
-  when: ansible_distribution == "OpenEuler"  
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])

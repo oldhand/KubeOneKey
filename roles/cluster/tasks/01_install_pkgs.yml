@@ -1,12 +1,12 @@
 ---
 - name: Install kubeadm kubelet
-  dnf: 
+  yum: 
     name: 
       - kubeadm
       - kubelet
       - cri-tools
     state: present
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 # 新增任务：加载本地Kubernetes镜像,在ARM与X86架构下分别处理，etcd与coredns版本各不相同
@@ -71,23 +71,23 @@
   when: is_worker == 1  and ansible_architecture == "x86_64"
 
 - name: Install kubectl
-  dnf: 
+  yum: 
     name: kubectl
     state: present
-  when: is_master == 1 and ansible_distribution == "OpenEuler"
+  when: is_master == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: 确保kubelet配置目录存在
   file:
     path: /etc/sysconfig
     state: directory
     mode: '0755'
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Kubelet configuration
   copy: 
     src: kubelet
     dest: /etc/sysconfig/kubelet
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 - name: Install kubectl

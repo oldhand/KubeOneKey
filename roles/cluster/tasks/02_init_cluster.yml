@@ -58,5 +58,7 @@
     dest: /tmp/k8s_join_vars.yml  # 目标节点的存储路径
     mode: '0644'
   when:
-    - (is_master == 1) or (is_worker == 1)  # 只分发给主节点和工作节点
-    - inventory_hostname != hostvars | dict2items | selectattr('value.is_init', 'defined') | selectattr('value.is_init', 'eq', 1) | map(attribute='key') | first  # 排除初始化节点（已存在该文件）
+    # 只对主节点或工作节点生效
+    - (is_master == 1) or (is_worker == 1)
+    # 排除初始化节点（is_init已定义且等于1的节点）
+    - not (is_init is defined and is_init == 1)

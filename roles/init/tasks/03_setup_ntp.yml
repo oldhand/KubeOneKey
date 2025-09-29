@@ -1,16 +1,16 @@
 ---
 - name: Remove ntp package
-  dnf:
+  yum:
     name: 
       - ntp
     state: absent
-  when: ansible_distribution == "OpenEuler"
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Install chrony package
-  dnf:
+  yum:
     name: chrony
     state: present
-  when: ansible_distribution == "OpenEuler"
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Remove ntp package
   apt:

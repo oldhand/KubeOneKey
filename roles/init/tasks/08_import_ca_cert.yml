@@ -7,17 +7,17 @@
     path: /etc/pki/ca-trust/source/anchors/
     state: directory
     mode: '0755'
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Copy ca certificates to host
   copy:
     src: cacert.pem
     dest: /etc/pki/ca-trust/source/anchors/cacert.pem
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 - name: Update ca cert cache
   shell: update-ca-trust
-  when: is_worker == 1 and ansible_distribution == "OpenEuler"
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
 - name: Ensure ca-certificates package is installed
