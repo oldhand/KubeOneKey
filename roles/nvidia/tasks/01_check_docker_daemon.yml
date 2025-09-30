@@ -15,15 +15,17 @@
   ansible.builtin.slurp:
     path: "/etc/docker/daemon.json"
   register: daemon_json_raw
+  when: nvidia_smi_check.rc == 0
 
 - name: 处理空内容，生成标准 JSON 字符串
   ansible.builtin.set_fact:
     daemon_json_content: "{{ (daemon_json_raw.content | b64decode | trim) | default('{}') | string }}"
+  when: nvidia_smi_check.rc == 0
 
 - name: 解析 daemon.json 为 JSON 变量
   ansible.builtin.set_fact:
     daemon_config: "{{ daemon_json_content | from_json }}"
-
+  when: nvidia_smi_check.rc == 0
 
 # 检查并添加 nvidia 运行时配置（保留原有其他配置）
 - name: 确保配置中包含 nvidia 运行时
@@ -46,16 +48,18 @@
           recursive=True
         )
       }}
-  when: >-
-    (daemon_config.runtimes is not defined or "nvidia" not in daemon_config.runtimes)
-     or (daemon_config["default-runtime"] is not defined or daemon_config["default-runtime"] != "nvidia")
+  when:
+    - nvidia_smi_check.rc == 0
+    - (daemon_config.runtimes is not defined or "nvidia" not in daemon_config.runtimes) or (daemon_config["default-runtime"] is not defined or daemon_config["default-runtime"] != "nvidia")
 
 - name: 写回更新后的 daemon.json 配置
   ansible.builtin.copy:
     content: "{{ daemon_config | to_json(indent=2) }}"  # 格式化 JSON 便于阅读
     dest: "/etc/docker/daemon.json"
     mode: '0644'
-  when: daemon_json_content != (daemon_config | to_json(indent=2))
+  when:
+    - nvidia_smi_check.rc == 0
+    - daemon_json_content != (daemon_config | to_json(indent=2))
 
 - name: 重启Docker服务
   ansible.builtin.systemd:
@@ -63,12 +67,13 @@
     state: restarted  # 重启服务（关键：让新配置生效）
     enabled: yes
     daemon_reload: yes  # 若未修改Docker服务文件，也可设为no（不影响）
-  when: daemon_json_content != (daemon_config | to_json(indent=2))
-
-
+  when:
+    - nvidia_smi_check.rc == 0
+    - daemon_json_content != (daemon_config | to_json(indent=2))
 
 - name: 验证 Docker 运行时包含 nvidia（Docker）
   ansible.builtin.shell: "docker info | grep -i 'runtime.*nvidia'"
   register: docker_runtime_check
   failed_when: docker_runtime_check.rc != 0
   changed_when: false
+  when: nvidia_smi_check.rc == 0

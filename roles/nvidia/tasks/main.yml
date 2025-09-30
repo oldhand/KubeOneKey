@@ -1,5 +1,7 @@
 ---
 - include_tasks: 00_check_nvidia.yml
 - include_tasks: 01_check_docker_daemon.yml
-- include_tasks: 02_deply_plugin.yml
-- include_tasks: 05_distribute_packages.yml
+- include_tasks: 02_distribute_packages.yml
+- include_tasks: 03_deply_plugin.yml
+- include_tasks: 04_deply_discovery.yml
+

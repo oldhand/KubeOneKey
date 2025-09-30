@@ -12,7 +12,7 @@
   failed_when:
     - nvidia_driver_version.stdout is version('450.80.02', '<')
   notify: "驱动版本过低，请升级至 450.80.02 或更高版本"
-
+  when: nvidia_smi_check.rc == 0
 
 - name: 安装 nvidia-container-runtime（Ubuntu）
   ansible.builtin.apt:
@@ -21,6 +21,6 @@
       - nvidia-container-toolkit
     update_cache: yes
     state: present
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution == "Ubuntu" and nvidia_smi_check.rc == 0
 
 

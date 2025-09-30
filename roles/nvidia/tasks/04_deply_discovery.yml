@@ -1,0 +1,28 @@
+---
+- name: 复制 gpu-feature-discovery-0.17.4.tgz 安装文件到临时目录
+  copy:
+    src: "gpu-feature-discovery-0.17.4.tgz"
+    dest: "/tmp/gpu-feature-discovery-0.17.4.tgz"
+    mode: 0644
+  when: nvidia_smi_check.rc == 0
+
+- name: Uninstall gpu-feature-discovery using Helm
+  command: >
+    /usr/local/bin/helm uninstall gpu-feature-discovery --namespace kube-system
+  register: uninstall_gpu_feature_discovery
+  changed_when: "'uninstalled' in uninstall_gpu_feature_discovery.stdout"
+  failed_when:
+    - uninstall_gpu_feature_discovery.rc != 0
+    - "'not found' not in uninstall_gpu_feature_discovery.stderr"
+  when: nvidia_smi_check.rc == 0
+
+
+- name: Install gpu-feature-discovery from local Helm Chart
+  command: >
+    /usr/local/bin/helm upgrade --install gpu-feature-discovery /tmp/gpu-feature-discovery-0.17.4.tgz  --namespace kube-system --create-namespace
+  register: install_gpu_feature_discovery
+  changed_when: "'installed' in install_gpu_feature_discovery.stdout"
+  failed_when:
+    - install_gpu_feature_discovery.rc != 0
+    - "'already exists' not in install_gpu_feature_discovery.stderr"
+  when: nvidia_smi_check.rc == 0

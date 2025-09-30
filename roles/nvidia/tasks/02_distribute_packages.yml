@@ -1,0 +1,48 @@
+---
+- name: 检查 nvidia-device-plugin-v0.17.4.tar 是否存在
+  stat:
+    path: "{{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin-v0.17.4.tar"
+  register: target_tar_stat
+  run_once: true
+  when: nvidia_smi_check.rc == 0
+
+- name: 合并分卷并解压生成 nvidia-device-plugin-v0.17.4.tar
+  shell: |
+    # 合并分卷为完整zip文件
+    cat {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip.001 \
+        {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip.002 \
+        {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip.003 \
+        > {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip
+    
+    # 解压zip到目标目录（确保tar直接生成在该目录）
+    unzip -q -o {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip \
+          -d {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/
+    
+    # 清理临时zip文件
+    rm -f {{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin.zip
+  run_once: true  # 控制节点执行一次
+  when:
+    - nvidia_smi_check.rc == 0
+    - not target_tar_stat.stat.exists  # 仅tar不存在时执行
+
+- name: 复制本地镜像文件到临时目录
+  copy:
+    src: "{{ playbook_dir }}/nvidia/{{ ansible_architecture }}/{{ item }}"
+    dest: "/tmp/{{ item }}"
+    mode: 0644
+    directory_mode: 0755           # 为目录设置单独的权限（可选）
+    remote_src: no         # 表示src是本地路径，不是远程路径
+    force: yes             # 如果目标存在则覆盖
+  with_items:
+    - "nvidia-device-plugin-v0.17.4.tar"
+    - "node-feature-discovery-v0.15.3.tar"
+  when: nvidia_smi_check.rc == 0
+
+- name: 加载本地镜像到Docker
+  shell: "docker load -i /tmp/{{ item }}"
+  with_items:
+    - "nvidia-device-plugin-v0.17.4.tar"
+    - "node-feature-discovery-v0.15.3.tar"
+  when: nvidia_smi_check.rc == 0
+
+

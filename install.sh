@@ -45,5 +45,4 @@ elif [ "$cpu_arch" = "aarch64" ]; then
    fi
 fi
 
-
 ansible-playbook -i hosts.ini install_k8s.yml -k
