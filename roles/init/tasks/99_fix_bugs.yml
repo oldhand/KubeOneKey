@@ -42,20 +42,20 @@
   when: sysctl_conf_stat.stat.exists  # 仅当文件存在时执行
 
 
-- name: 为 root 用户添加 soft nofile 限制（65535）
+- name: 为 所有用户 添加 soft nofile 限制（65535）
   lineinfile:
     path: /etc/security/limits.conf
-    regexp: '^root\s+soft\s+nofile\s+65535$'
-    line: 'root soft nofile 65535'
+    regexp: '^\*\s+soft\s+nofile\s+65535$'  # 转义 * 为 \*，匹配 "* soft nofile 65535" 行
+    line: '* soft nofile 65535'  # 所有用户的软限制
     state: present
     backup: no
     insertafter: EOF
 
-- name: 为 root 用户添加 hard nofile 限制（65535）
+- name: 为 所有用户 添加 hard nofile 限制（65535）
   lineinfile:
     path: /etc/security/limits.conf
-    regexp: '^root\s+hard\s+nofile\s+65535$'
-    line: 'root hard nofile 65535'
+    regexp: '^\*\s+hard\s+nofile\s+65535$'  # 转义 * 为 \*，匹配 "* hard nofile 65535" 行
+    line: '* hard nofile 65535'  # 所有用户的硬限制
     state: present
     backup: no
     insertafter: EOF
