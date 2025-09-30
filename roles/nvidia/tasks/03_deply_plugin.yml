@@ -1,32 +1,39 @@
 ---
 - name: 检查节点是否有NVIDIA GPU（PCI厂商ID 10de）
-  command: lspci -n | grep -i '10de'  # 10de是NVIDIA的PCI厂商ID
+  shell: "/usr/bin/lspci -n | grep -i '10de'"  # 10de是NVIDIA的PCI厂商ID
   register: has_nvidia_gpu
   changed_when: false
-  failed_when: false  # 即使没有GPU也不报错
+  failed_when: false
   when: nvidia_smi_check.rc == 0
 
-# 新增：为有GPU的节点打标签
-- name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
-  command: >
-    /usr/bin/kubectl label nodes {{ inventory_hostname }} 
-    feature.node.kubernetes.io/pci-10de.present=true 
-    --overwrite  # 若标签已存在则覆盖，避免报错
+- name: 获取节点主机名（用于K8s节点标签操作）
+  command: hostname
+  register: node_hostname
+  changed_when: false
   when:
     - nvidia_smi_check.rc == 0
-    - has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
+    - has_nvidia_gpu.rc == 0
+
+- name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
+  command: >
+    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} 
+    feature.node.kubernetes.io/pci-10de.present=true 
+    --overwrite
+  when:
+    - nvidia_smi_check.rc == 0
+    - has_nvidia_gpu.rc == 0
   register: label_pci
-  changed_when: "'labeled' in label_pci.stdout"  # 只有标签实际更新时才标记为changed
+  changed_when: "'labeled' in label_pci.stdout"
 
 
 - name: 为GPU节点添加标签 nvidia.com/mps.capable=true
   command: >
-    /usr/bin/kubectl label nodes {{ inventory_hostname }} 
+    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} 
     nvidia.com/mps.capable=true 
     --overwrite
   when:
     - nvidia_smi_check.rc == 0
-    - has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
+    - has_nvidia_gpu.rc == 0
   register: label_mps
   changed_when: "'labeled' in label_mps.stdout"
 
