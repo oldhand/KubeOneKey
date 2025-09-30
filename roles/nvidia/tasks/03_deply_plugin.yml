@@ -16,9 +16,7 @@
 
 - name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
   command: >
-    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} 
-    feature.node.kubernetes.io/pci-10de.present=true 
-    --overwrite
+    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} feature.node.kubernetes.io/pci-10de.present=true --overwrite
   when:
     - nvidia_smi_check.rc == 0
     - has_nvidia_gpu.rc == 0
@@ -28,9 +26,7 @@
 
 - name: 为GPU节点添加标签 nvidia.com/mps.capable=true
   command: >
-    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} 
-    nvidia.com/mps.capable=true 
-    --overwrite
+    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} nvidia.com/mps.capable=true --overwrite
   when:
     - nvidia_smi_check.rc == 0
     - has_nvidia_gpu.rc == 0
