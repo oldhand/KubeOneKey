@@ -16,8 +16,12 @@
     - /usr/local/bin/containerd
   ignore_errors: true
 
+- name: 调整系统级文件描述符和 inotify 限制
+  copy:
+    src: "kube-sysctl.conf"
+    dest: "/etc/sysctl.d/kube-sysctl.conf"
 
-# Fix sysctl bug in openEuler
+
 - name: Check if /etc/sysctl.conf exists
   stat:
     path: /etc/sysctl.conf
@@ -36,6 +40,25 @@
     path: /etc/sysctl.conf
     state: absent
   when: sysctl_conf_stat.stat.exists  # 仅当文件存在时执行
+
+
+- name: 为 root 用户添加 soft nofile 限制（65535）
+  lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '^root\s+soft\s+nofile\s+65535$'
+    line: 'root soft nofile 65535'
+    state: present
+    backup: no
+    insertafter: EOF
+
+- name: 为 root 用户添加 hard nofile 限制（65535）
+  lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '^root\s+hard\s+nofile\s+65535$'
+    line: 'root hard nofile 65535'
+    state: present
+    backup: no
+    insertafter: EOF
 
 # Mask tmp.mount
 - name: Mask tmp.mount
