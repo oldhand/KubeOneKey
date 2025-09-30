@@ -1,0 +1,11 @@
+---
+- name: 复制 nvidia-device-plugin-v0.17.4.tar 镜像文件到临时目录
+  copy:
+    src: "{{ playbook_dir }}/nvidia/{{ ansible_architecture }}/nvidia-device-plugin-v0.17.4.tar"
+    dest: "/tmp/nvidia-device-plugin-v0.17.4.tar"
+    mode: 0644
+  when: is_worker == 1
+
+- name: 加载 nvidia-device-plugin-v0.17.4.tar 镜像到Docker
+  shell: "docker load -i /tmp/nvidia-device-plugin-v0.17.4.tar"
+  when: is_worker == 1
