@@ -1,4 +1,32 @@
 ---
+- name: 检查节点是否有NVIDIA GPU（PCI厂商ID 10de）
+  command: lspci -n | grep -i '10de'  # 10de是NVIDIA的PCI厂商ID
+  register: has_nvidia_gpu
+  changed_when: false
+  failed_when: false  # 即使没有GPU也不报错
+
+
+# 新增：为有GPU的节点打标签
+- name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
+  command: >
+    /usr/bin/kubectl label nodes {{ inventory_hostname }} 
+    feature.node.kubernetes.io/pci-10de.present=true 
+    --overwrite  # 若标签已存在则覆盖，避免报错
+  when: has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
+  register: label_pci
+  changed_when: "'labeled' in label_pci.stdout"  # 只有标签实际更新时才标记为changed
+
+
+- name: 为GPU节点添加标签 nvidia.com/mps.capable=true
+  command: >
+    /usr/bin/kubectl label nodes {{ inventory_hostname }} 
+    nvidia.com/mps.capable=true 
+    --overwrite
+  when: has_nvidia_gpu.rc == 0
+  register: label_mps
+  changed_when: "'labeled' in label_mps.stdout"
+
+
 - name: 复制 nvidia-device-plugin-0.17.4.tgz 安装文件到临时目录
   copy:
     src: "nvidia-device-plugin-0.17.4.tgz"

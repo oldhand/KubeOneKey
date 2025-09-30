@@ -20,10 +20,6 @@
   ansible.builtin.set_fact:
     daemon_json_content: "{{ (daemon_json_raw.content | b64decode | trim) | default('{}') | string }}"
 
-- name: 显示处理后的 daemon.json 内容
-  ansible.builtin.debug:
-    var: daemon_json_content
-
 - name: 解析 daemon.json 为 JSON 变量
   ansible.builtin.set_fact:
     daemon_config: "{{ daemon_json_content | from_json }}"
@@ -36,6 +32,7 @@
       {{
         daemon_config | combine(
           {
+            "default-runtime": "nvidia",
             "runtimes": daemon_config.runtimes | default({}) | combine(
               {
                 "nvidia": {
@@ -50,8 +47,8 @@
         )
       }}
   when: >-
-    daemon_config.runtimes is not defined
-    or "nvidia" not in daemon_config.runtimes
+    (daemon_config.runtimes is not defined or "nvidia" not in daemon_config.runtimes)
+     or (daemon_config["default-runtime"] is not defined or daemon_config["default-runtime"] != "nvidia")
 
 - name: 写回更新后的 daemon.json 配置
   ansible.builtin.copy:

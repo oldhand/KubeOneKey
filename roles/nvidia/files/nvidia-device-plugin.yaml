@@ -18,15 +18,15 @@ image:
   tag: "v0.17.4"
 
 # 如果希望只在有 GPU 的节点运行，可以加 nodeSelector
-#nodeSelector:
-#  feature.node.kubernetes.io/pci-10de.present: "true"
+nodeSelector:
+  feature.node.kubernetes.io/pci-10de.present: "true"
 
 # 其他默认配置
 #devicePlugin:
 #  enabled: true
 
 
-deviceDiscoveryStrategy: "auto"
+deviceDiscoveryStrategy: "nvml"
 
 
 # 示例：在部署YAML中添加配置
