@@ -4,7 +4,7 @@
   register: has_nvidia_gpu
   changed_when: false
   failed_when: false  # 即使没有GPU也不报错
-
+  when: nvidia_smi_check.rc == 0
 
 # 新增：为有GPU的节点打标签
 - name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
@@ -12,7 +12,9 @@
     /usr/bin/kubectl label nodes {{ inventory_hostname }} 
     feature.node.kubernetes.io/pci-10de.present=true 
     --overwrite  # 若标签已存在则覆盖，避免报错
-  when: has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
+  when:
+    - nvidia_smi_check.rc == 0
+    - has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
   register: label_pci
   changed_when: "'labeled' in label_pci.stdout"  # 只有标签实际更新时才标记为changed
 
@@ -22,7 +24,9 @@
     /usr/bin/kubectl label nodes {{ inventory_hostname }} 
     nvidia.com/mps.capable=true 
     --overwrite
-  when: has_nvidia_gpu.rc == 0
+  when:
+    - nvidia_smi_check.rc == 0
+    - has_nvidia_gpu.rc == 0  # 仅当检测到GPU时执行
   register: label_mps
   changed_when: "'labeled' in label_mps.stdout"
 
@@ -32,7 +36,7 @@
     src: "nvidia-device-plugin-0.17.4.tgz"
     dest: "/tmp/nvidia-device-plugin-0.17.4.tgz"
     mode: 0644
-  when: is_worker == 1
+  when: nvidia_smi_check.rc == 0
 
 
 - name: 复制 nvidia-device-plugin.yaml 安装文件到临时目录
@@ -42,6 +46,7 @@
     mode: '0644'
   run_once: true
   when: nvidia_smi_check.rc == 0
+
 - name: Uninstall nvidia-device-plugin using Helm
   command: >
     /usr/local/bin/helm uninstall nvidia-device-plugin --namespace kube-system
@@ -50,8 +55,7 @@
   failed_when:
     - uninstall_nvidia_device_plugin.rc != 0
     - "'not found' not in uninstall_nvidia_device_plugin.stderr"
-  when:
-    - nvidia_smi_check.rc == 0
+  when: nvidia_smi_check.rc == 0
 
 
 - name: Install nvidia-device-plugin from local Helm Chart
@@ -62,8 +66,7 @@
   failed_when:
     - install_nvidia_device_plugin.rc != 0
     - "'already exists' not in install_nvidia_device_plugin.stderr"
-  when:
-    - nvidia_smi_check.rc == 0
+  when: nvidia_smi_check.rc == 0
 
 - name: "等待 nvidia-device-plugin 节点就绪状态"
   kubernetes.core.k8s_info:
@@ -75,7 +78,6 @@
   until: nvidia_status.resources | length > 0
   retries: 30
   delay: 10
-  when:
-    - nvidia_smi_check.rc == 0
+  when:  nvidia_smi_check.rc == 0
 
 

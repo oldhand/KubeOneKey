@@ -3,12 +3,14 @@
   ansible.builtin.command: "which nvidia-smi"
   register: nvidia_smi_check
   failed_when: nvidia_smi_check.rc != 0
+  ignore_errors: yes
   changed_when: false
 
 - name: 验证 NVIDIA 驱动版本（需 ≥450.80.02）
   ansible.builtin.command: "nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits"
   register: nvidia_driver_version
   changed_when: false
+  ignore_errors: yes
   failed_when:
     - nvidia_driver_version.stdout is version('450.80.02', '<')
   notify: "驱动版本过低，请升级至 450.80.02 或更高版本"

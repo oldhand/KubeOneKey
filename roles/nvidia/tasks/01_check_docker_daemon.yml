@@ -4,12 +4,14 @@
     path: "/etc/docker"
     state: directory
     mode: '0755'
+  when: nvidia_smi_check.rc == 0
 
 - name: 确保 Docker 配置文件 daemon.json 存在
   ansible.builtin.file:
     path: "/etc/docker/daemon.json"
     state: file  # 确保文件存在（不存在则创建空文件）
     mode: '0644'  # 与后续模板生成的权限保持一致
+  when: nvidia_smi_check.rc == 0
 
 - name: 读取 /etc/docker/daemon.json 内容
   ansible.builtin.slurp:
