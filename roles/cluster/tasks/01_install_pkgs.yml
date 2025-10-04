@@ -9,8 +9,52 @@
   when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
 
+- name: 检查镜像文件是否存在
+  stat:
+    path: "{{ playbook_dir }}/images/{{ ansible_architecture }}/kube-apiserver-v1.29.3.tar"
+  register: target_tar_stat
+  run_once: true
+
+
+- name: 合并分卷并解压生成镜像文件 (aarch64)
+  shell: |
+    # 合并分卷为完整zip文件
+    cat {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.001 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.002 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.003 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.004 \
+        > {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
+    
+    # 解压zip到目标目录（确保tar直接生成在该目录）
+    unzip -q -o {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip \
+          -d {{ playbook_dir }}/images/{{ ansible_architecture }}/
+    
+    # 清理临时zip文件
+    rm -f {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
+  run_once: true  # 控制节点执行一次
+  when: not target_tar_stat.stat.exists and ansible_architecture == "aarch64"
+
+- name: 合并分卷并解压生成镜像文件 (x86_64)
+  shell: |
+    # 合并分卷为完整zip文件
+    cat {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.001 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.002 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.003 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.004 \
+        {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip.005 \
+        > {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
+    
+    # 解压zip到目标目录（确保tar直接生成在该目录）
+    unzip -q -o {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip \
+          -d {{ playbook_dir }}/images/{{ ansible_architecture }}/
+    
+    # 清理临时zip文件
+    rm -f {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
+  run_once: true  # 控制节点执行一次
+  when: not target_tar_stat.stat.exists and ansible_architecture == "x86_64"
+
 # 新增任务：加载本地Kubernetes镜像,在ARM与X86架构下分别处理，etcd与coredns版本各不相同
-- name: 复制本地镜像文件到临时目录
+- name: 复制本地镜像文件到临时目录 (aarch64)
   copy:
     src: "{{ playbook_dir }}/images/{{ ansible_architecture }}/{{ item }}"
     dest: "/tmp/{{ item }}"
@@ -28,7 +72,7 @@
     - "coredns-v1.11.1.tar"
   when: is_worker == 1 and ansible_architecture == "aarch64"
 
-- name: 复制本地镜像文件到临时目录
+- name: 复制本地镜像文件到临时目录 (x86_64)
   copy:
     src: "{{ playbook_dir }}/images/{{ ansible_architecture }}/{{ item }}"
     dest: "/tmp/{{ item }}"
@@ -46,7 +90,7 @@
     - "coredns-v1.10.1.tar"
   when: is_worker == 1 and ansible_architecture == "x86_64"
 
-- name: 加载本地镜像到Docker
+- name: 加载本地镜像到Docker (aarch64)
   shell: "docker load -i /tmp/{{ item }}"
   with_items:
     - "kube-apiserver-v1.29.3.tar"
@@ -58,7 +102,7 @@
     - "coredns-v1.11.1.tar"
   when: is_worker == 1  and ansible_architecture == "aarch64"
 
-- name: 加载本地镜像到Docker
+- name: 加载本地镜像到Docker (x86_64)
   shell: "docker load -i /tmp/{{ item }}"
   with_items:
     - "kube-apiserver-v1.29.3.tar"
