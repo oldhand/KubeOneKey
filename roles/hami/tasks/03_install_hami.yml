@@ -1,0 +1,64 @@
+---
+- name: Create remote temporary directory
+  file:
+    path: "/tmp/hami_offline_install"
+    state: directory
+    mode: '0755'
+  run_once: true
+
+- name: Transfer Hami Helm Chart to remote node
+  copy:
+    src: "files/hami-{{ hami_version | replace('v', '') }}.tgz"
+    dest: "/tmp/hami_offline_install/hami-{{ hami_version | replace('v', '') }}.tgz"
+    mode: '0644'
+  run_once: true
+
+- name: Transfer hami.yaml to remote node
+  copy:
+    src: "files/hami.yaml"
+    dest: "/tmp/hami_offline_install/hami.yaml"
+    mode: '0644'
+  run_once: true
+
+- name: Uninstall Hami using Helm
+  command: >
+    /usr/local/bin/helm uninstall hami --namespace kube-system
+  register: uninstall_hami
+  changed_when: "'uninstalled' in uninstall_hami.stdout"
+  failed_when:
+    - uninstall_hami.rc != 0
+    - "'not found' not in uninstall_hami.stderr"
+  run_once: true
+
+
+- name: Install Hami from local Helm Chart
+  command: >
+    /usr/local/bin/helm upgrade --install hami /tmp/hami_offline_install/hami-{{ hami_version | replace('v', '') }}.tgz \
+    --namespace kube-system \
+    --create-namespace \
+    -f /tmp/hami_offline_install/hami.yaml
+  register: install_hami
+  changed_when: "'installed' in install_hami.stdout"
+  failed_when:
+    - install_hami.rc != 0
+    - "'already exists' not in install_hami.stderr"
+  run_once: true
+
+
+- name: Verify Hami installation
+  command: "/usr/bin/kubectl get pods -n kube-system"
+  register: verify_install
+  changed_when: false
+  run_once: true
+
+- name: Display Hami pods status
+  debug:
+    msg: "{{ verify_install.stdout_lines }}"
+  run_once: true
+
+- name: Clean up temporary files
+  file:
+    path: "/tmp/hami_offline_install/"
+    state: absent
+  when: "'cleanup' not in ansible_run_tags"
+  run_once: true

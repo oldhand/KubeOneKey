@@ -1,0 +1,80 @@
+---
+- name: 创建临时目录存放镜像
+  file:
+    path: "/tmp/images/hami"
+    state: directory
+    mode: '0755'
+
+- name: 创建目录存放 hami 镜像
+  file:
+    path: "{{ playbook_dir }}/images/hami/{{ ansible_architecture }}"
+    state: directory
+    mode: '0755'
+
+- name: 设置依赖的镜像
+  ansible.builtin.set_fact:
+    hami_images:
+      - "projecthami/hami:{{ hami_version }}"
+      - "jettech/kube-webhook-certgen:v1.5.2"
+      - "liangjw/kube-webhook-certgen:v1.1.1"
+
+
+
+- name: 处理 hami 镜像（检查本地文件 -> 拉取 -> 保存）
+  block:
+    - name: 检查本地是否存在镜像文件
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/images/hami/{{ ansible_architecture }}/{{ item | replace('/', '_') | replace(':', '_') }}.tar"
+      register: image_file_stat
+      loop: "{{ hami_images }}"
+      run_once: true
+
+    - name: 拉取远程镜像
+      ansible.builtin.command: "docker pull {{ base_repo }}/{{ item }}"
+      register: pull_result
+      changed_when: "'Status: Downloaded newer image for' in pull_result.stdout"
+      when: not (image_file_stat.results | selectattr('item', 'equalto', item) | first).stat.exists
+      loop: "{{ hami_images }}"
+      run_once: true
+
+
+    - name: 将镜像保存到本地目录
+      ansible.builtin.command: >
+        docker save {{ base_repo }}/{{ item }}
+        -o {{ playbook_dir }}/images/hami/{{ ansible_architecture }}/{{ item | replace('/', '_') | replace(':', '_') }}.tar
+      changed_when: true
+      when:
+        - not (image_file_stat.results | selectattr('item', 'equalto', item) | first).stat.exists
+        - (pull_result.results | selectattr('item', 'equalto', item) | first) is succeeded
+      loop: "{{ hami_images }}"
+      run_once: true
+
+  when: hami_images is defined and hami_images | length > 0
+  run_once: true
+
+
+- name: 查找所有属于 hami 的镜像（tar）文件
+  ansible.builtin.find:
+    path: "{{ playbook_dir }}/images/hami/{{ ansible_architecture }}/"
+    patterns: '*.tar'
+    recurse: no
+  delegate_to: localhost
+  register: tar_files
+  run_once: true
+
+
+- name: 复制 hami 的镜像文件到目标节点
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/images/hami/{{ ansible_architecture }}/{{ item | basename }}"
+    dest: "/tmp/images/hami/{{ item | basename }}"
+    mode: '0644'
+  with_items: "{{ tar_files.files | map(attribute='path') | list }}"
+  when: tar_files.files | length > 0
+
+
+- name: 加载 hami 的镜像文件到 Docker
+  shell: "docker load -i /tmp/images/hami/{{ item | basename }}"
+  with_items: "{{ tar_files.files | map(attribute='path') | list }}"
+  when: tar_files.files | length > 0
+
+

@@ -1,0 +1,4 @@
+---
+- include_tasks: 01_deploy_images.yml
+- include_tasks: 02_label_node.yml
+- include_tasks: 03_install_hami.yml

@@ -1,0 +1,146 @@
+# ============================================================
+# HAMi vGPU 离线部署配置（单节点主节点可调度）
+# 版本：v2.6.1
+# 维护者：ChatGPT GPT-5
+# ============================================================
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: "kube-system"
+imagePullSecrets: [ ]
+version: "v2.6.1"
+
+# ---------- GPU 参数 ----------
+resourceName: "hami.com/gpu"
+resourceMem: "hami.com/gpumem"
+resourceMemPercentage: "hami.com/gpumem-percentage"
+resourceCores: "hami.com/gpucores"
+resourcePriority: "hami.com/priority"
+
+schedulerName: "hami-scheduler"
+
+podSecurityPolicy:
+  enabled: false
+
+global:
+  imageRegistry: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io"   # ✅ 离线仓库
+  gpuHookPath: /usr/local
+  labels: {}
+  annotations: {}
+  managedNodeSelectorEnable: false
+  managedNodeSelector:
+    usage: "gpu"
+
+# ---------- Scheduler ----------
+scheduler:
+  nodeName: ""
+  overwriteEnv: "false"
+  defaultSchedulerPolicy:
+    nodeSchedulerPolicy: binpack
+    gpuSchedulerPolicy: spread
+  metricsBindAddress: ":9395"
+  livenessProbe: false
+  leaderElect: false
+  replicas: 1
+
+  kubeScheduler:
+    enabled: true
+    image: "registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler"
+    imageTag: "v1.29.3"
+    imagePullPolicy: IfNotPresent
+    extraNewArgs:
+      - --config=/config/config.yaml
+      - -v=4
+    extraArgs:
+      - --policy-config-file=/config/config.json
+      - -v=4
+
+  extender:
+    image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/projecthami/hami"
+    imagePullPolicy: IfNotPresent
+    extraArgs:
+      - --debug
+      - -v=4
+
+  # ✅ 调度器容忍主节点
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  admissionWebhook:
+    customURL:
+      enabled: false
+    whitelistNamespaces:
+      - kube-system
+    reinvocationPolicy: Never
+    failurePolicy: Ignore
+
+  patch:
+    enabled: true
+    image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/liangjw/kube-webhook-certgen:v1.1.1"
+    imageNew: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/liangjw/kube-webhook-certgen:v1.1.1"
+    imagePullPolicy: IfNotPresent
+    tolerations:
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+
+  service:
+    type: NodePort
+    httpPort: 443
+    schedulerPort: 31998
+    monitorPort: 31993
+    monitorTargetPort: 9395
+
+# ---------- Device Plugin ----------
+devicePlugin:
+  image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/projecthami/hami"
+  monitorimage: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/projecthami/hami"
+  monitorctrPath: /usr/local/vgpu/containers
+  imagePullPolicy: IfNotPresent
+  deviceSplitCount: 10
+  deviceMemoryScaling: 1
+  deviceCoreScaling: 1
+  runtimeClassName: ""
+  createRuntimeClass: false
+  migStrategy: "none"
+  disablecorelimit: "false"
+  passDeviceSpecsEnabled: false
+  extraArgs:
+    - -v=4
+
+  # ✅ 容忍主节点
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  nvidianodeSelector:
+    gpu: "on"
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  service:
+    type: NodePort
+    httpPort: 31992
+
+devices:
+  nvidia:
+    gpuCorePolicy: default
+    libCudaLogLevel: 1
+  ascend:
+    enabled: false
+  kunlun:
+    enabled: false
+  mthreads:
+    enabled: false
+  enflame:
+    enabled: false
+  iluvatar:
+    enabled: false
+  metax:
+    enabled: false

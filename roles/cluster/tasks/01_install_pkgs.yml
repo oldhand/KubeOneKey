@@ -1,13 +1,61 @@
 ---
-- name: Install kubeadm kubelet
+- name: "停止kubelet服务"
+  systemd:
+    name: kubelet
+    state: stopped
+    enabled: no
+  when: is_worker == 1
+  ignore_errors: yes
+
+- name: Remove kubeadm kubelet kubectl (CentOS or OpenEuler)
+  yum:
+    name:
+      - kubeadm
+      - kubectl
+      - kubelet
+      - cri-tools
+    state: absent
+    autoremove: yes
+    purge: yes
+  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+
+- name: Remove kubeadm kubelet kubectl (Ubuntu)
+  apt:
+    name:
+      - kubeadm
+      - kubectl
+      - kubelet
+      - cri-tools
+    state: absent
+    autoremove: yes
+    purge: yes
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"
+
+
+- name: Install kubeadm kubelet kubectl (CentOS or OpenEuler)
   yum: 
     name: 
       - kubeadm
+      - kubectl
       - kubelet
       - cri-tools
     state: present
   when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
 
+- name: Install kubeadm kubelet kubectl (Ubuntu)
+  apt:
+    name:
+      - kubeadm
+      - kubectl
+      - kubelet
+      - cri-tools
+    state: present
+  when: is_worker == 1 and ansible_distribution == "Ubuntu"
+
+- name: "systemctl daemon-reload"
+  systemd:
+    daemon_reload: yes
+  when: is_worker == 1
 
 - name: 检查镜像文件是否存在
   stat:
@@ -114,12 +162,6 @@
     - "coredns-v1.10.1.tar"
   when: is_worker == 1  and ansible_architecture == "x86_64"
 
-- name: Install kubectl
-  yum: 
-    name: kubectl
-    state: present
-  when: is_master == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
-
 - name: 确保kubelet配置目录存在
   file:
     path: /etc/sysconfig
@@ -132,13 +174,6 @@
     src: kubelet
     dest: /etc/sysconfig/kubelet
   when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
-
-
-- name: Install kubectl
-  apt:
-    name: kubectl
-    state: present
-  when: is_master == 1 and ansible_distribution == "Ubuntu"
 
 
 - name: Kubelet configuration (Ubuntu)
