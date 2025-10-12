@@ -6,4 +6,4 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-pip download kubernetes PyYAML
+pip3 download kubernetes PyYAML

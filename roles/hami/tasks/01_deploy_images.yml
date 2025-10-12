@@ -49,39 +49,6 @@
     - not projecthami_hami_tar_stat.stat.exists  # projecthami_hami_v2.6.1.tar 不存在时执行
     - hami_zip_stat.stat.exists  # hami.zip.001 存在时执行
 
-- name: 处理 hami 镜像（检查本地文件 -> 拉取 -> 保存）
-  block:
-    - name: 检查本地是否存在镜像文件
-      ansible.builtin.stat:
-        path: "{{ playbook_dir }}/hami/{{ ansible_architecture }}/{{ item | replace('/', '_') | replace(':', '_') }}.tar"
-      register: image_file_stat
-      loop: "{{ hami_images }}"
-      run_once: true
-
-    - name: 拉取远程镜像
-      ansible.builtin.command: "docker pull {{ base_repo }}/{{ item }}"
-      register: pull_result
-      changed_when: "'Status: Downloaded newer image for' in pull_result.stdout"
-      when: not (image_file_stat.results | selectattr('item', 'equalto', item) | first).stat.exists
-      loop: "{{ hami_images }}"
-      run_once: true
-
-
-    - name: 将镜像保存到本地目录
-      ansible.builtin.command: >
-        docker save {{ base_repo }}/{{ item }}
-        -o {{ playbook_dir }}/hami/{{ ansible_architecture }}/{{ item | replace('/', '_') | replace(':', '_') }}.tar
-      changed_when: true
-      when:
-        - not (image_file_stat.results | selectattr('item', 'equalto', item) | first).stat.exists
-        - (pull_result.results | selectattr('item', 'equalto', item) | first) is succeeded
-      loop: "{{ hami_images }}"
-      run_once: true
-
-  when: hami_images is defined and hami_images | length > 0
-  run_once: true
-
-
 - name: 查找所有属于 hami 的镜像（tar）文件
   ansible.builtin.find:
     path: "{{ playbook_dir }}/hami/{{ ansible_architecture }}/"

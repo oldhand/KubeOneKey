@@ -13,5 +13,6 @@ k8s_master:
 k8s_os:
   - { name: "Ubuntu", version: "22.04", architecture: "x86_64" }
   - { name: "CentOS", version: "7.9", architecture: "x86_64" }
+  - { name: "CentOS", version: "7.7", architecture: "x86_64" }
   - { name: "openEuler", version: "22.03", architecture: "aarch64" }
 

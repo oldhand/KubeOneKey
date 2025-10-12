@@ -15,9 +15,8 @@
       - kubelet
       - cri-tools
     state: absent
-    autoremove: yes
-    purge: yes
   when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+  ignore_errors: true
 
 - name: Remove kubeadm kubelet kubectl (Ubuntu)
   apt:
@@ -30,7 +29,7 @@
     autoremove: yes
     purge: yes
   when: is_worker == 1 and ansible_distribution == "Ubuntu"
-
+  ignore_errors: true
 
 - name: Install kubeadm kubelet kubectl (CentOS or OpenEuler)
   yum: 
@@ -202,9 +201,6 @@
     name: kubelet.service
     enabled: yes
   when: is_worker == 1
-  notify:
-    - Restart OS
-    - Wait for server come back
 
 - name: Flush handlers
   meta: flush_handlers

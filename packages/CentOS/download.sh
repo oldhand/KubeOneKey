@@ -8,15 +8,15 @@ fi
 
 # 验证操作系统是否为CentOS
 if ! grep -q "CentOS Linux" /etc/os-release; then
-    echo "此脚本专为 CentOS 7.9 设计，检测到不兼容的操作系统"
+    echo "此脚本专为 CentOS 7 设计，检测到不兼容的操作系统"
     exit 1
 fi
+
 echo "下载所有的依赖包..."
+rm -fr /etc/yum.repos.d/*.repo
+cp *.repo /etc/yum.repos.d/
 
 
-
-sudo yumdownloader --resolve --destdir=$PWD/ epel-release
-sudo yum install -y epel-release
 # 第一组基础网络和工具包
 sudo yumdownloader --resolve --destdir=$PWD/ \
     net-tools openssh-clients openssh-server sshpass curl wget git tar createrepo yum-utils \
