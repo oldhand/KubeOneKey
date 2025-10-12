@@ -81,6 +81,6 @@
   until: nvidia_status.resources | length > 0
   retries: 30
   delay: 10
-  when:  nvidia_smi_check.rc == 0
+  when: nvidia_smi_check.rc == 0
 
 

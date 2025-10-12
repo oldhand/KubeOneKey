@@ -47,16 +47,20 @@
 
 - name: "等待 hami-device-plugin 节点就绪状态"
   kubernetes.core.k8s_info:
-    kind: "Pod"
-    namespace: "kube-system"
-    label_selectors: ["app.kubernetes.io/component=hami-device-plugin"]
-    field_selectors: ["status.phase=Running"]
+    kind: Pod
+    namespace: kube-system
+    label_selectors:
+      - "app.kubernetes.io/component=hami-device-plugin"
+    field_selectors:
+      - "status.phase=Running"
   register: hami_status
   until: hami_status.resources | length > 0
   retries: 30
   delay: 10
   when: install_hami.rc == 0
   run_once: true
+
+
 
 - name: Clean up temporary files
   file:
