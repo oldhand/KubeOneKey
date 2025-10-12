@@ -45,13 +45,12 @@
   run_once: true
 
 - name: "检查 hami-device-plugin Pod 是否存在"
-  kubernetes.core.k8s_info:
-    kind: Pod
-    namespace: kube-system
-    label_selectors: ["app.kubernetes.io/component=hami-device-plugin"]  # 替换为实际标签
+  command: >
+    kubectl get pods -n kube-system -l app.kubernetes.io/component=hami-device-plugin --no-headers
   register: hami_pod_check
   when: install_hami.rc == 0
   run_once: true
+  failed_when: false
 
 # 步骤2：仅当Pod存在时，等待其进入Running状态
 - name: "等待 hami-device-plugin 节点就绪状态（仅Pod存在时执行）"
@@ -66,7 +65,7 @@
   delay: 10
   when:
     - install_hami.rc == 0
-    - hami_pod_check.resources | length > 0  # 仅Pod存在时执行
+    - hami_pod_check.stdout | length > 0  # 仅Pod存在时执行
   run_once: true
 
 
