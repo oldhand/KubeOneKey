@@ -44,22 +44,30 @@
     - "'already exists' not in install_hami.stderr"
   run_once: true
 
-
-- name: "等待 hami-device-plugin 节点就绪状态"
+- name: "检查 hami-device-plugin Pod 是否存在"
   kubernetes.core.k8s_info:
     kind: Pod
     namespace: kube-system
-    label_selectors:
-      - "app.kubernetes.io/component=hami-device-plugin"
-    field_selectors:
-      - "status.phase=Running"
+    label_selectors: ["app.kubernetes.io/component=hami-device-plugin"]  # 替换为实际标签
+  register: hami_pod_check
+  when: install_hami.rc == 0
+  run_once: true
+
+# 步骤2：仅当Pod存在时，等待其进入Running状态
+- name: "等待 hami-device-plugin 节点就绪状态（仅Pod存在时执行）"
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: kube-system
+    label_selectors: ["app.kubernetes.io/component=hami-device-plugin"]  # 与步骤1标签一致
+    field_selectors: ["status.phase=Running"]  # 筛选运行中状态
   register: hami_status
   until: hami_status.resources | length > 0
   retries: 30
   delay: 10
-  when: install_hami.rc == 0
+  when:
+    - install_hami.rc == 0
+    - hami_pod_check.resources | length > 0  # 仅Pod存在时执行
   run_once: true
-
 
 
 - name: Clean up temporary files
