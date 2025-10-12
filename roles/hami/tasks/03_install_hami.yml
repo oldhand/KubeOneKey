@@ -55,7 +55,7 @@
   until: hami_status.resources | length > 0
   retries: 30
   delay: 10
-  when:  install_hami.rc == 0
+  when: install_hami.rc == 0
   run_once: true
 
 - name: Clean up temporary files
