@@ -12,6 +12,8 @@
   loop:
     - createrepo_c-0.17.6-1.oe2203.aarch64.rpm
     - drpm-0.5.0-2.oe2203.aarch64.rpm
+    - deltarpm-3.6-3.el7.x86_64.rpm
+    - python-deltarpm-3.6-3.el7.x86_64.rpm
   when: ansible_distribution == "OpenEuler"
 
 - name: 安装所需依赖包
