@@ -41,6 +41,17 @@
     state: present
   when: ansible_distribution == "CentOS"
 
+- name: Install pkgs
+  yum:
+    name:
+      - rdma-core
+      - libibverbs
+      - libibverbs-devel
+      - libmlx5
+      - libmlx4
+    state: present
+  when: ansible_distribution == "CentOS"
+
 
 - name: 安装依赖包
   apt:
