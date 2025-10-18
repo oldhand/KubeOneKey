@@ -1,35 +1,22 @@
 ---
-- name: 检查节点是否有NVIDIA GPU（PCI厂商ID 10de）
-  shell: "/usr/bin/lspci -n | grep -i '10de'"  # 10de是NVIDIA的PCI厂商ID
-  register: has_nvidia_gpu
-  changed_when: false
-  failed_when: false
-  when: nvidia_smi_check.rc == 0
-
 - name: 获取节点主机名（用于K8s节点标签操作）
   command: hostname
   register: node_hostname
   changed_when: false
-  when:
-    - nvidia_smi_check.rc == 0
-    - has_nvidia_gpu.rc == 0
+  when: nvidia_smi_check.rc == 0
 
 - name: 为GPU节点添加标签 feature.node.kubernetes.io/pci-10de.present=true
   command: >
-    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} feature.node.kubernetes.io/pci-10de.present=true --overwrite
-  when:
-    - nvidia_smi_check.rc == 0
-    - has_nvidia_gpu.rc == 0
+    kubectl label nodes {{ node_hostname.stdout }} feature.node.kubernetes.io/pci-10de.present=true --overwrite
+  when: nvidia_smi_check.rc == 0
   register: label_pci
   changed_when: "'labeled' in label_pci.stdout"
 
 
 - name: 为GPU节点添加标签 nvidia.com/mps.capable=true
   command: >
-    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} nvidia.com/mps.capable=true --overwrite
-  when:
-    - nvidia_smi_check.rc == 0
-    - has_nvidia_gpu.rc == 0
+    kubectl label nodes {{ node_hostname.stdout }} nvidia.com/mps.capable=true --overwrite
+  when: nvidia_smi_check.rc == 0
   register: label_mps
   changed_when: "'labeled' in label_mps.stdout"
 
@@ -41,7 +28,6 @@
     mode: 0644
   when: nvidia_smi_check.rc == 0
 
-
 - name: 复制 nvidia-device-plugin.yaml 安装文件到临时目录
   copy:
     src: "files/nvidia-device-plugin.yaml"
@@ -52,7 +38,7 @@
 
 - name: Uninstall nvidia-device-plugin using Helm
   command: >
-    /usr/local/bin/helm uninstall nvidia-device-plugin --namespace kube-system
+    helm uninstall nvidia-device-plugin --namespace kube-system
   register: uninstall_nvidia_device_plugin
   changed_when: "'uninstalled' in uninstall_nvidia_device_plugin.stdout"
   failed_when:
@@ -63,7 +49,7 @@
 
 - name: Install nvidia-device-plugin from local Helm Chart
   command: >
-    /usr/local/bin/helm upgrade --install nvidia-device-plugin /tmp/nvidia-device-plugin-0.17.4.tgz  --namespace kube-system --create-namespace -f /tmp/nvidia-device-plugin.yaml
+    helm upgrade --install nvidia-device-plugin /tmp/nvidia-device-plugin-0.17.4.tgz  --namespace kube-system --create-namespace -f /tmp/nvidia-device-plugin.yaml
   register: install_nvidia_device_plugin
   changed_when: "'installed' in install_nvidia_device_plugin.stdout"
   failed_when:

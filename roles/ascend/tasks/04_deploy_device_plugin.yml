@@ -1,0 +1,27 @@
+---
+
+- name: 生成 NPU 设备插件部署文件
+  template:
+    src: "ascend-mindxdl-device-plugin.yaml.j2"
+    dest: "/tmp/ascend-mindxdl-device-plugin.yaml"
+  when: npu_smi_check.rc == 0
+
+- name: 部署 ascend-mindxdl-device-plugin
+  kubernetes.core.k8s:
+    src: "/tmp/ascend-mindxdl-device-plugin.yaml"
+    state: present
+  when: npu_smi_check.rc == 0
+  run_once: true
+
+- name: 验证设备插件运行
+  kubernetes.core.k8s_info:
+    kind: DaemonSet
+    name: ascend-device-plugin
+    namespace: "kube-system"
+  register: ascend_device_plugin_status
+  until: >
+    ascend_device_plugin_status.resources[0].status.numberReady | int  == ascend_device_plugin_status.resources[0].status.desiredNumberScheduled | int
+  retries: 10
+  delay: 10
+  when: npu_smi_check.rc == 0
+  run_once: true

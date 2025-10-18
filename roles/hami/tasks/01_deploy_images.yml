@@ -31,7 +31,7 @@
   run_once: true
 
 
-- name: 合并分卷并解压生成 nvidia-device-plugin-v0.17.4.tar
+- name: 合并分卷并解压生成 projecthami_hami_v2.6.1.tar
   shell: |
     # 合并分卷为完整zip文件
     cat {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip.001 \

@@ -1,0 +1,21 @@
+---
+- name: 检查 npu-smi 命令是否存在（验证驱动）
+  ansible.builtin.command: "which npu-smi"
+  register: npu_smi_check
+  failed_when: npu_smi_check.rc != 0
+  ignore_errors: yes
+  changed_when: false
+
+
+- name: 获取节点主机名（用于K8s节点标签操作）
+  command: hostname
+  register: node_hostname
+  changed_when: false
+  when: npu_smi_check.rc == 0
+
+- name: 为 NPU 节点添加标签 ascend=true
+  command: >
+    kubectl label nodes {{ node_hostname.stdout }} ascend=true --overwrite
+  when: npu_smi_check.rc == 0
+  register: label_node
+  changed_when: "'labeled' in label_node.stdout"

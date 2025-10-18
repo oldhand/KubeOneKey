@@ -22,7 +22,7 @@
 
 - name: Uninstall Hami using Helm
   command: >
-    /usr/local/bin/helm uninstall hami --namespace kube-system
+    helm uninstall hami --namespace kube-system
   register: uninstall_hami
   changed_when: "'uninstalled' in uninstall_hami.stdout"
   failed_when:
@@ -33,7 +33,7 @@
 
 - name: Install Hami from local Helm Chart
   command: >
-    /usr/local/bin/helm upgrade --install hami /tmp/hami_offline_install/hami-{{ hami_version | replace('v', '') }}.tgz \
+    helm upgrade --install hami /tmp/hami_offline_install/hami-{{ hami_version | replace('v', '') }}.tgz \
     --namespace kube-system \
     --create-namespace \
     -f /tmp/hami_offline_install/hami.yaml

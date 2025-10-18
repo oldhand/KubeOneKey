@@ -1,0 +1,6 @@
+---
+- include_tasks: 01_check_ascend.yml
+- include_tasks: 02_distribute_packages.yml
+- include_tasks: 03_clear_history.yml
+- include_tasks: 04_deploy_device_plugin.yml
+

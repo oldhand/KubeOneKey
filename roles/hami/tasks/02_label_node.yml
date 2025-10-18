@@ -1,19 +1,20 @@
 ---
-- name: 检查节点是否有NVIDIA GPU（PCI厂商ID 10de）
-  shell: "/usr/bin/lspci -n | grep -i '10de'"  # 10de是NVIDIA的PCI厂商ID
-  register: has_nvidia_gpu
+- name: 检查 nvidia-smi 命令是否存在（验证驱动）
+  ansible.builtin.command: "which nvidia-smi"
+  register: nvidia_smi_check
+  failed_when: nvidia_smi_check.rc != 0
+  ignore_errors: yes
   changed_when: false
-  failed_when: false
 
 - name: 获取节点主机名（用于K8s节点标签操作）
   command: hostname
   register: node_hostname
   changed_when: false
-  when: has_nvidia_gpu.rc == 0
+  when: nvidia_smi_check.rc == 0
 
 - name: 为GPU节点添加标签 gpu=on
   command: >
-    /usr/bin/kubectl label nodes {{ node_hostname.stdout }} gpu=on --overwrite
-  when: has_nvidia_gpu.rc == 0
+    kubectl label nodes {{ node_hostname.stdout }} gpu=on --overwrite
+  when: nvidia_smi_check.rc == 0
   register: label_pci
   changed_when: "'labeled' in label_pci.stdout"

@@ -8,7 +8,7 @@
 
 - name: Uninstall gpu-feature-discovery using Helm
   command: >
-    /usr/local/bin/helm uninstall gpu-feature-discovery --namespace kube-system
+    helm uninstall gpu-feature-discovery --namespace kube-system
   register: uninstall_gpu_feature_discovery
   changed_when: "'uninstalled' in uninstall_gpu_feature_discovery.stdout"
   failed_when:
@@ -19,7 +19,7 @@
 
 - name: Install gpu-feature-discovery from local Helm Chart
   command: >
-    /usr/local/bin/helm upgrade --install gpu-feature-discovery /tmp/gpu-feature-discovery-0.17.4.tgz  --namespace kube-system --create-namespace
+    helm upgrade --install gpu-feature-discovery /tmp/gpu-feature-discovery-0.17.4.tgz  --namespace kube-system --create-namespace
   register: install_gpu_feature_discovery
   changed_when: "'installed' in install_gpu_feature_discovery.stdout"
   failed_when:

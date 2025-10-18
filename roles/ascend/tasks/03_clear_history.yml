@@ -1,0 +1,24 @@
+#---
+- name: 清理 ascend-device-plugin 旧资源
+  ansible.builtin.shell: |
+    kubectl get {{ item.kind }} -n kube-system --no-headers -o custom-columns=":metadata.name" \
+    | grep -E "^{{ item.name }}" \
+    | xargs --no-run-if-empty kubectl delete {{ item.kind }} -n kube-system --ignore-not-found
+  loop:
+    - { kind: DaemonSet, name: "ascend-device-plugin" }
+    - { kind: Pod, name: "aascend-device-plugin" }
+    - { kind: ServiceAccount, name: "ascend-device-plugin-sa-910" }
+  failed_when: false
+  run_once: true
+
+
+- name: 清理 ascend-device-plugin 旧资源(无命名空间)
+  ansible.builtin.shell: |
+    kubectl get {{ item.kind }} --no-headers -o custom-columns=":metadata.name" \
+    | grep -E "^{{ item.name }}" \
+    | xargs --no-run-if-empty kubectl delete {{ item.kind }} --ignore-not-found
+  loop:
+    - { kind: ClusterRole, name: "pods-node-ascend-device-plugin-role-910" }
+    - { kind: ClusterRoleBinding, name: "pods-node-ascend-device-plugin-rolebinding-910" }
+  failed_when: false
+  run_once: true

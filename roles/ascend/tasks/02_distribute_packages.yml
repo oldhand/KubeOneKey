@@ -1,0 +1,26 @@
+---
+- name: 检查镜像文件 ascend-k8sdeviceplugin_v7.1.RC1.tar 是否存在
+  stat:
+    path: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/ascend-k8sdeviceplugin_v7.1.RC1.tar"
+  register: target_tar_stat
+  run_once: true
+
+- name: 解压镜像文件 ascend-k8sdeviceplugin_v7.1.RC1.tar.gz
+  ansible.builtin.unarchive:
+    src: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/ascend-k8sdeviceplugin_v7.1.RC1.tar.gz"
+    dest: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/"
+    remote_src: yes  # 源文件在目标主机本地
+  run_once: true  # 控制节点执行一次
+  when: not target_tar_stat.stat.exists  # 仅tar不存在时执行
+
+- name: 复制 ascend-mindxdl-device-plugin 镜像文件到临时目录
+  copy:
+    src: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/ascend-k8sdeviceplugin_v7.1.RC1.tar"
+    dest: "/tmp/ascend-k8sdeviceplugin_v7.1.RC1.tar"
+    mode: 0644
+  when: is_worker == 1
+
+- name: 加载 ascend-mindxdl-device-plugin 镜像到Docker
+  shell: "docker load -i /tmp/ascend-k8sdeviceplugin_v7.1.RC1.tar"
+  when: is_worker == 1
+

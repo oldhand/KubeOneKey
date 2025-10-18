@@ -13,6 +13,11 @@ version: "v2.6.1"
 # ---------- GPU 参数 ----------
 resourceName: "hami.com/gpu"
 resourceMem: "hami.com/gpumem"
+
+# 新增Ascend资源
+ascendResourceName: "hami.com/ascend"
+ascendResourceMem: "hami.com/ascendmem"
+
 resourceMemPercentage: "hami.com/gpumem-percentage"
 resourceCores: "hami.com/gpucores"
 resourcePriority: "hami.com/priority"
@@ -119,6 +124,9 @@ devicePlugin:
   nvidianodeSelector:
     gpu: "on"
 
+  ascendNodeSelector:
+    ascend: "true"  # 匹配Ascend节点的标签
+
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -133,7 +141,7 @@ devices:
     gpuCorePolicy: default
     libCudaLogLevel: 1
   ascend:
-    enabled: false
+    enabled: true
   kunlun:
     enabled: false
   mthreads:
