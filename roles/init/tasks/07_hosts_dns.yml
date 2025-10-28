@@ -1,30 +1,61 @@
 ---
 
 # Add host record to /etc/hosts
-- name: Add host record
+- name: Add host record (Use Hostname As NodeName)
   lineinfile:
     dest: /etc/hosts
     regexp: "^{{ item.ip }}"
     line: "{{ item.ip }} {{ item.hostname }}"
     state: present
   with_items: "{{ k8s_master }}"
+  when: not k8s_use_ip_as_nodename
+
+- name: Add host record (Use IP As NodeName)
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "^{{ item.ip }}"
+    line: "{{ item.ip }} {{ item.ip }}"
+    state: present
+  with_items: "{{ k8s_master }}"
+  when:  k8s_use_ip_as_nodename
 
 # 确保/etc/hostname文件同步更新（部分系统依赖此文件）
-- name: 更新/etc/hostname文件
+- name: 更新/etc/hostname文件 (Use Hostname As NodeName)
   ansible.builtin.lineinfile:
     path: /etc/hostname
     regexp: '^.*$'  # 替换文件中所有内容
-    line: "{{ item.hostname }}"
+    line: "{{ item.ip }}"
     state: present
   with_items: "{{ k8s_master }}"
-  when: inventory_hostname == item.ip
+  when:
+    - inventory_hostname == item.ip
+    - not k8s_use_ip_as_nodename
+
+- name: 更新/etc/hostname文件 (Use IP As NodeName)
+  ansible.builtin.lineinfile:
+    path: /etc/hostname
+    regexp: '^.*$'  # 替换文件中所有内容
+    line: "{{ item.ip }}"
+    state: present
+  with_items: "{{ k8s_master }}"
+  when:
+    - inventory_hostname == item.ip
+    - k8s_use_ip_as_nodename
 
 # 设置主机名（新增任务）
-- name: Set hostname to defined value
+- name: Set hostname to defined value (Use Hostname As NodeName)
   command: "sudo hostnamectl set-hostname {{ item.hostname }}"
   with_items: "{{ k8s_master }}"
-  when: inventory_hostname == item.ip  # 仅对当前节点执行对应的主机名设置
+  when:
+    - inventory_hostname == item.ip
+    - not k8s_use_ip_as_nodename
 
+- name: Set hostname to defined value  (Use IP As NodeName)
+  command: "sudo hostnamectl set-hostname {{ item.ip }}"
+  with_items: "{{ k8s_master }}"
+  when:
+    - inventory_hostname == item.ip
+    - k8s_use_ip_as_nodename
 
 - name: Configure DNS servers in resolv.conf
   lineinfile:

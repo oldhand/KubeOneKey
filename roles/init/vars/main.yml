@@ -7,8 +7,9 @@ dns_server:
   - 8.8.8.8
 k8s_version: 1.29
 nic_name: "ens33"
+k8s_use_ip_as_nodename: true  # 启用IP作为节点名称
 k8s_master:
-  - { ip: "192.168.0.139", hostname: "oe2203m01" }
+  - { ip: "192.168.0.139", hostname: "kube01" }
 
 k8s_os:
   - { name: "Ubuntu", version: "22.04", architecture: "x86_64" }
