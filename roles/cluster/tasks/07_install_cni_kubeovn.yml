@@ -37,6 +37,31 @@
     - /etc/origin/ovn
   when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
+
+- name: 在各节点执行加载 openvswitch 内核模块
+  shell: modprobe openvswitch
+  args:
+    executable: /bin/bash
+  become: yes
+  ignore_errors: yes
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  
+- name: Enable and start ovsdb-server service
+  systemd:
+    name: ovsdb-server
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+
+- name: Enable and start ovs-vswitchd service
+  systemd:
+    name: ovs-vswitchd
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+
 - name: Enable and start openvswitch service
   systemd:
     name: openvswitch
