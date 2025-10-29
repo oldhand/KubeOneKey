@@ -122,8 +122,7 @@
   when: is_worker == 1
 
 - name: 离线安装 kube-ovn v1.13.8（仅在初始化节点执行）
-  ansible.builtin.command: >
-    "/tmp/kube-ovn/install.sh > /tmp/kube-ovn-install.log 2>&1"
+  shell: "/tmp/kube-ovn/install.sh > /tmp/kube-ovn-install.log 2>&1"
   register: ovn_install_result
   failed_when: false  # 关键：强制将任务标记为“成功”，不显示 fatal 提示
   ignore_errors: yes  # 新增：忽略该步骤的错误，不中断部署
