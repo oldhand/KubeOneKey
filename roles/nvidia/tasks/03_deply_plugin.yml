@@ -33,7 +33,6 @@
     src: "nvidia-device-plugin.yaml"
     dest: "/tmp/nvidia-device-plugin.yaml"
     mode: '0644'
-  run_once: true
   when: nvidia_smi_check.rc == 0
 
 - name: Uninstall nvidia-device-plugin using Helm
