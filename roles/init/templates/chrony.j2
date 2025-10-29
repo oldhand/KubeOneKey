@@ -1,23 +1,14 @@
-# -------------------------- 1. 配置上游 NTP 源 --------------------------
-# 选择国内稳定的公共 NTP 源（避免用国外源，延迟高），建议配置 2-3 个冗余
-server ntp.aliyun.com iburst    # 阿里云 NTP 源（推荐）
-server time1.cloud.tencent.com iburst  # 腾讯云 NTP 源（冗余）
-server ntp.tuna.tsinghua.edu.cn iburst # 清华大学校内 NTP 源（适合教育网）
-# 说明：iburst 表示服务启动时快速发送 8 个请求，加速初始同步（非必需，但推荐）
+server ntp.aliyun.com iburst
+server time1.cloud.tencent.com iburst
+server ntp.tuna.tsinghua.edu.cn iburst
 
-# -------------------------- 2. 允许客户端访问 --------------------------
-# 配置允许同步的客户端网段（根据你的内网修改，如 192.168.0.0/24 表示 192.168.0.x 所有设备）
 allow all
-# 禁止配置：allow all（开放公网访问，有安全风险，如 DDoS 攻击）
 
-# -------------------------- 3. 本地时间备份（可选但推荐） --------------------------
-# 若与上游源断开，仍以 stratum 10 级别为客户端提供服务（避免客户端无时间源）
 local stratum 10
-  
-  # -------------------------- 4. 其他默认配置（无需修改） --------------------------
-driftfile /var/lib/chrony/drift  # 记录时钟漂移，用于本地校准
-makestep 1.0 3                   # 若时钟偏差>1秒，3次尝试内强制调整
-rtcsync                          # 同步系统时间到硬件时钟（避免重启后时间偏差）
-logdir /var/log/chrony           # 日志目录
+
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+logdir /var/log/chrony
 
 server {{ ntp_server }} iburst
