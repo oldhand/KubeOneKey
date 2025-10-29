@@ -190,6 +190,18 @@
   ignore_errors: true
   when: is_worker == 1
 
+
+- name:  确保 kubernetes kubelet 配置目录存在
+  file:
+    path: {{ item }}
+    state: directory
+    mode: '0755'
+  with_items:
+    - /etc/cni/net.d
+    - /var/lib/kubelet
+    - /etc/kubernetes/manifests
+  when: is_worker == 1
+
 - name: Stop kubelet service
   service:
     name: kubelet.service
