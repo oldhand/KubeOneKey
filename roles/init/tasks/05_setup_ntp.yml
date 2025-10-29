@@ -1,4 +1,10 @@
 ---
+- name: 设置系统时区（Asia/Shanghai）
+  timedatectl:
+    name: "Asia/Shanghai"
+    state: present
+    enabled: yes
+
 - name: Remove ntp package
   yum:
     name: 
@@ -36,3 +42,9 @@
     state: restarted
     enabled: yes
 
+- name: 等待 Chrony 完成首次同步（最多等待30秒）
+  command: chronyc tracking
+  retries: 6  # 重试6次（每次间隔5秒）
+  delay: 5
+  until: "'Leap status : Normal' in chrony_tracking.stdout"
+  ignore_errors: yes
