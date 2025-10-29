@@ -181,7 +181,6 @@
     dest: /etc/default/kubelet  # Ubuntu默认使用/etc/default/目录
   when: is_worker == 1 and ansible_distribution == "Ubuntu"
 
-
 - name: Clean up kubernetes
   shell: |
     kubeadm reset --force 
@@ -190,10 +189,9 @@
   ignore_errors: true
   when: is_worker == 1
 
-
 - name:  确保 kubernetes kubelet 配置目录存在
   file:
-    path: {{ item }}
+    path: "{{ item }}"
     state: directory
     mode: '0755'
   with_items:
