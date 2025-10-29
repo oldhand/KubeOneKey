@@ -30,7 +30,7 @@
 
 - name: 复制 nvidia-device-plugin.yaml 安装文件到临时目录
   copy:
-    src: "files/nvidia-device-plugin.yaml"
+    src: "nvidia-device-plugin.yaml"
     dest: "/tmp/nvidia-device-plugin.yaml"
     mode: '0644'
   run_once: true
