@@ -57,6 +57,7 @@
     - /usr/bin/ansible-playbook
     - /usr/bin/ansible-galaxy
     - /usr/bin/ansible
+  ignore_errors: yes
   when: ansible_distribution == "CentOS"
 
 - name: 在 CentOS 安装升级版本的 Ansible
