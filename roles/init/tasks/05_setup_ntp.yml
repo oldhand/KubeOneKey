@@ -1,9 +1,7 @@
 ---
-- name: 设置系统时区（Asia/Shanghai）
-  timedatectl:
-    name: "Asia/Shanghai"
-    state: present
-    enabled: yes
+- name: 设置系统时区为 Asia/Shanghai
+  ansible.builtin.timezone:
+    name: Asia/Shanghai
 
 - name: Remove ntp package
   yum:
