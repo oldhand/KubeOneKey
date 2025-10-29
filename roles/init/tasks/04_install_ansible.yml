@@ -63,6 +63,7 @@
   set_fact:
     localhost_node: "{{ ansible_default_ipv4.address  }}"
   delegate_to: localhost
+  run_once: true
 
 - name: 安装 kubernetes-core-6.1.0.tar.gz
   ansible.builtin.command: >
