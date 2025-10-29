@@ -57,16 +57,4 @@
     - "'already exists' not in install_nvidia_device_plugin.stderr"
   when: nvidia_smi_check.rc == 0
 
-- name: "等待 nvidia-device-plugin 节点就绪状态"
-  kubernetes.core.k8s_info:
-    kind: "Pod"
-    namespace: "kube-system"
-    label_selectors: ["app.kubernetes.io/name=nvidia-device-plugin"]
-    field_selectors: ["status.phase=Running"]
-  register: nvidia_status
-  until: nvidia_status.resources | length > 0
-  retries: 30
-  delay: 10
-  when: nvidia_smi_check.rc == 0
-
 
