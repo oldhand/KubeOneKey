@@ -189,6 +189,12 @@
   ignore_errors: true
   when: is_worker == 1
 
+- name: Stop kubelet service
+  service:
+    name: kubelet.service
+    state: stopped
+  ignore_errors: true
+
 - name:  确保 kubernetes kubelet 配置目录存在
   file:
     path: "{{ item }}"
@@ -200,15 +206,10 @@
     - /etc/kubernetes/manifests
   when: is_worker == 1
 
-- name: Stop kubelet service
-  service:
-    name: kubelet.service
-    state: stopped
-  ignore_errors: true
-
 - name: Enable kubelet service
   systemd:
-    name: kubelet.service
+    name: kubelet
+    state: started
     enabled: yes
   when: is_worker == 1
 

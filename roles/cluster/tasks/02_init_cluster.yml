@@ -1,9 +1,4 @@
 ---
-- name: Clean up kubernetes
-  shell: |
-     kubeadm reset --force
-  ignore_errors: true
-
 - name: Init cluster
   shell: |
     kubeadm init \
