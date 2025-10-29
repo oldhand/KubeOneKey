@@ -41,6 +41,7 @@
     helm uninstall nvidia-device-plugin --namespace kube-system
   register: uninstall_nvidia_device_plugin
   changed_when: "'uninstalled' in uninstall_nvidia_device_plugin.stdout"
+  ignore_errors: yes
   failed_when:
     - uninstall_nvidia_device_plugin.rc != 0
     - "'not found' not in uninstall_nvidia_device_plugin.stderr"
