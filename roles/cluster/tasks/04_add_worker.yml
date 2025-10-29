@@ -8,6 +8,7 @@
 - name: Add worker to cluster
   shell: |
     kubeadm join {{ control_plane_endpoint }} \
+      --ignore-preflight-errors=SystemVerification \
       --token {{ k8s_join.kubeadm_token }} \
       --discovery-token-ca-cert-hash {{ k8s_join.discovery_token_ca_cert_hash }}
   when: (is_master == 0) and (is_worker == 1)
