@@ -58,3 +58,11 @@
     - (is_master == 1) or (is_worker == 1)
     # 排除初始化节点（is_init已定义且等于1的节点）
     - not (is_init is defined and is_init == 1)
+
+- name: Create kube config for all master
+  shell: |
+    mkdir -p $HOME/.kube && \
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config && \
+    kubectl completion bash > /etc/bash_completion.d/kubectl
+  when: (is_init is defined) and (is_init == 1)
