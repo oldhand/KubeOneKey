@@ -6,6 +6,7 @@
     mode: '0755'             # 所有者可读写执行，其他用户只读（符合安全规范）
     owner: root              # 确保root为所有者，避免权限混乱
     group: root
+  when: (is_init is defined) and (is_init == 1)
 
 - name: 卸载 openvswitch package
   yum:
@@ -34,8 +35,7 @@
     - /var/log/openvswitch
     - /var/log/ovn
     - /var/log/kube-ovn
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
-
+  when: (is_init is defined) and (is_init == 1)
 
 - name: "创建 OVS/OVN 目录"
   ansible.builtin.file:
@@ -54,8 +54,7 @@
     - /etc/ovn
     - /etc/origin/openvswitch
     - /etc/origin/ovn
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
-
+  when: (is_init is defined) and (is_init == 1)
 
 - name: 在各节点执行加载 openvswitch 内核模块
   shell: modprobe openvswitch

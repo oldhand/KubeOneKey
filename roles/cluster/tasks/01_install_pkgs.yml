@@ -201,7 +201,6 @@
     state: directory
     mode: '0755'
   with_items:
-    - /etc/cni/net.d
     - /var/lib/kubelet
     - /etc/kubernetes/manifests
   when: is_worker == 1
