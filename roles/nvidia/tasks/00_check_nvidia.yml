@@ -28,7 +28,7 @@
     - nvidia_smi_check.rc == 0
 
 - name: 安装 nvidia-container-runtime（CentOS or OpenEuler）
-  ansible.builtin.apt:
+  yum:
     name:
       - nvidia-container-runtime
       - nvidia-container-toolkit
