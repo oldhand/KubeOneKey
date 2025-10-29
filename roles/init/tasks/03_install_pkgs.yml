@@ -13,6 +13,8 @@
       - nc
       - bash-completion
       - openvswitch
+      - python3
+      - python3-pip
       # 
       # For runc
       - libseccomp
@@ -33,6 +35,8 @@
       - nc
       - bash-completion
       - openvswitch
+      - python3
+      - python3-pip
       #
       # For runc
       - libseccomp
@@ -51,7 +55,6 @@
       - libmlx4
     state: present
   when: ansible_distribution == "CentOS"
-
 
 - name: 安装依赖包
   apt:
@@ -73,5 +76,7 @@
       - ca-certificates
       - openvswitch-common
       - openvswitch-switch
+      - python3
+      - python3-pip
     state: present
   when: ansible_distribution == "Ubuntu"

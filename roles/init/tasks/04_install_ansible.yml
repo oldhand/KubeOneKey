@@ -1,0 +1,75 @@
+---
+#
+#rpm -e ansible-2.9.27-1.el7.noarch
+#pip3 install $(pwd)/pip/$os_name/pip-21.3.1-py3-none-any.whl
+#pip3 install --no-index --find-links=$(pwd)/pip/$os_name ansible
+#ln -s /usr/local/bin/ansible /usr/bin/ansible-playbook
+#ln -s /usr/local/bin/ansible /usr/bin/ansible-galaxy
+#ln -s /usr/local/bin/ansible /usr/bin/ansible
+#ansible-galaxy collection install $(pwd)/kubernetes/kubernetes-core-6.1.0.tar.gz --force
+#pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML
+
+#  ansible-galaxy collection install $(pwd)/kubernetes/kubernetes-core-6.1.0.tar.gz --force
+#  pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML
+
+
+- name: 安装 Ansible (Ubuntu)
+  apt:
+    name:
+      - ansible
+    state: present
+  when: ansible_distribution == "Ubuntu"
+
+
+- name: 创建临时目录存放 ansible 依赖包
+  file:
+    path: "/tmp/pip"
+    state: directory
+    mode: '0755'
+
+- name: 查找 Ansible 所有依赖包文件
+  ansible.builtin.find:
+    path: "{{ playbook_dir }}/pip/{{ ansible_distribution }}/"
+    patterns: '*.*'
+    recurse: no
+  delegate_to: localhost
+  register: ansible_files
+
+
+- name: 复制 Ansible 依赖包到目标节点
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/pip/{{ ansible_distribution }}/{{ item | basename }}"
+    dest: "/tmp/pip/{{ item | basename }}"
+    mode: '0644'
+  with_items: "{{ ansible_files.files | map(attribute='path') | list }}"
+  when: ansible_files.files | length > 0  # 确保只在有文件时执行
+
+- name: 将 kubernetes-core-6.1.0.tar.gz 上传到目标节点
+  copy:
+    src: "{{ playbook_dir }}/kubernetes/kubernetes-core-6.1.0.tar.gz"
+    dest: "/tmp/pip/kubernetes-core-6.1.0.tar.gz"
+
+- name: 在 CentOS 安装升级版本的 Ansible
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - pip3 install /tmp/pip/pip-21.3.1-py3-none-any.whl
+    - pip3 install --no-index --find-links=/tmp/pip/ ansible
+    - ln -s /usr/local/bin/ansible /usr/bin/ansible-playbook
+    - ln -s /usr/local/bin/ansible /usr/bin/ansible-galaxy
+    - ln -s /usr/local/bin/ansible /usr/bin/ansible
+  when: ansible_distribution == "CentOS"
+
+- name: "获得控制节点信息"
+  set_fact:
+    localhost_node: "{{ ansible_default_ipv4.address  }}"
+  delegate_to: localhost
+
+- name: 安装 kubernetes-core-6.1.0.tar.gz
+  ansible.builtin.command: >
+    ansible-galaxy collection install /tmp/pip/kubernetes-core-6.1.0.tar.gz --force
+  when: inventory_hostname != localhost_node
+
+- name: pip3 安装 kubernetes PyYAML
+  ansible.builtin.command: >
+    pip3 install --no-index --find-links=/tmp/pip/ kubernetes PyYAML
+  when: inventory_hostname != localhost_node
