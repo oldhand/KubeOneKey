@@ -7,6 +7,7 @@
 - name: Init cluster
   shell: |
     kubeadm init \
+      --ignore-preflight-errors=SystemVerification \
       --kubernetes-version {{ k8s_version_release }} \
       --pod-network-cidr {{ pod_cidr }} \
       --service-cidr {{ service_cidr }} \
