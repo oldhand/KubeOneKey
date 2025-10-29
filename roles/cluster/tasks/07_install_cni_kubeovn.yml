@@ -131,21 +131,26 @@
   ignore_errors: yes  # 新增：忽略该步骤的错误，不中断部署
   when: (is_init is defined) and (is_init == 1)
 
+
 # 可选：添加“验证 Kube-OVN 核心组件状态”的任务，确保实际可用
 - name: 验证 Kube-OVN 核心组件状态
   command: kubectl get pods -n kube-system -l app=kube-ovn-controller --no-headers
   when: (is_init is defined) and (is_init == 1)
   register: kube_ovn_pod_status
   until: kube_ovn_pod_status.stdout_lines | length > 0 and "Running" in kube_ovn_pod_status.stdout
-  retries: 10  # 重试10次
+  retries: 30  # 重试10次
   delay: 5     # 每次间隔5秒
+  delegate_to: localhost
+  run_once: true
 
 - name: 验证 kube-ovn 网络插件状态
   ansible.builtin.command: kubectl get pods -n kube-ovn
   register: ovn_status
-  when: (is_init is defined) and (is_init == 1)
+  delegate_to: localhost
+  run_once: true
 
 - name: 打印 kube-ovn 部署结果
   ansible.builtin.debug:
     msg: "{{ ovn_status.stdout_lines }}"
-  when: (is_init is defined) and (is_init == 1)
+  delegate_to: localhost
+  run_once: true
