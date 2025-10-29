@@ -33,13 +33,11 @@
   with_items:
     - "nvidia-device-plugin-v0.17.4.tar"
     - "node-feature-discovery-v0.15.3.tar"
-  when: nvidia_smi_check.rc == 0
 
 - name: 加载本地镜像到Docker
   shell: "docker load -i /tmp/{{ item }}"
   with_items:
     - "nvidia-device-plugin-v0.17.4.tar"
     - "node-feature-discovery-v0.15.3.tar"
-  when: nvidia_smi_check.rc == 0
 
 
