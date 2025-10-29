@@ -3,7 +3,7 @@
   file:
     path: "/home/packages/repodata"
     state: absent
-  when: (is_init is defined) and (is_init == 1) and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: ansible_distribution in ["OpenEuler", "CentOS"]
 
 
 
@@ -24,7 +24,7 @@
 
 - name: Generate repository metadata
   shell: createrepo --database /home/packages/
-  when: (is_init is defined) and (is_init == 1) and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: ansible_distribution in ["OpenEuler", "CentOS"]
 
 - name: Delete existed files in directory
   file: 
