@@ -1,7 +1,7 @@
 ---
-- name: Get helm package
-  get_url:
-    url: "file://{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/helm-v{{ helm_version }}-linux.tar.gz"
+- name: 复制 helm 到目标节点
+  copy:
+    src: "{{ playbook_dir }}/kubernetes/{{ ansible_architecture }}/helm-v{{ helm_version }}-linux.tar.gz"
     dest: /tmp/helm-v{{ helm_version }}-linux.tar.gz
 
 - name: Untar helm package
