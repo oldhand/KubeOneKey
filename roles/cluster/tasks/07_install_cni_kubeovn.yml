@@ -19,6 +19,24 @@
     state: present
   when: (ansible_distribution in ["OpenEuler", "CentOS"])
 
+- name: "清理 OVS/OVN 目录"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/run/openvswitch
+    - /var/run/openvswitch
+    - /var/run/ovn
+    - /etc/origin/openvswitch/
+    - /etc/origin/ovn/
+    - /etc/cni/net.d/00-kube-ovn.conflist
+    - /etc/cni/net.d/01-kube-ovn.conflist
+    - /var/log/openvswitch
+    - /var/log/ovn
+    - /var/log/kube-ovn
+  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+
+
 - name: "创建 OVS/OVN 目录"
   ansible.builtin.file:
     path: "{{ item }}"
@@ -31,6 +49,7 @@
     - /var/run/ovn
     - /var/log/openvswitch
     - /var/log/ovn
+    - /var/log/kube-ovn
     - /etc/openvswitch
     - /etc/ovn
     - /etc/origin/openvswitch
@@ -45,7 +64,7 @@
   become: yes
   ignore_errors: yes
   when: (ansible_distribution in ["OpenEuler", "CentOS"])
-  
+
 - name: Enable and start ovsdb-server service
   systemd:
     name: ovsdb-server
