@@ -25,6 +25,7 @@
     helm uninstall hami --namespace kube-system
   register: uninstall_hami
   changed_when: "'uninstalled' in uninstall_hami.stdout"
+  ignore_errors: yes
   failed_when:
     - uninstall_hami.rc != 0
     - "'not found' not in uninstall_hami.stderr"

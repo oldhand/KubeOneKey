@@ -11,6 +11,7 @@
     helm uninstall gpu-feature-discovery --namespace kube-system
   register: uninstall_gpu_feature_discovery
   changed_when: "'uninstalled' in uninstall_gpu_feature_discovery.stdout"
+  ignore_errors: yes
   failed_when:
     - uninstall_gpu_feature_discovery.rc != 0
     - "'not found' not in uninstall_gpu_feature_discovery.stderr"
