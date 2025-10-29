@@ -47,12 +47,12 @@
 - name: 上传 kube_clear.sh 到各节点
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/kube_clear.sh"
-    dest: "/home/kube_clear.sh"
+    dest: "/tmp/kube_clear.sh"
     mode: '0755'
   become: yes
 
 - name: 在各节点执行 kube_clear.sh 脚本
-  shell: /home/kube_clear.sh
+  shell: /tmp/kube_clear.sh
   args:
     executable: /bin/bash
   become: yes
