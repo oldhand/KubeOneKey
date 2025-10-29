@@ -32,7 +32,6 @@
     name:
       - nvidia-container-runtime
       - nvidia-container-toolkit
-    update_cache: yes
     state: present
   when:
     - ansible_distribution in ["OpenEuler", "CentOS"]
