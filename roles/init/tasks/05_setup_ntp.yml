@@ -42,7 +42,8 @@
 
 - name: 等待 Chrony 完成首次同步（最多等待30秒）
   command: chronyc tracking
-  retries: 6  # 重试6次（每次间隔5秒）
+  retries: 6
   delay: 5
-  until: "'Leap status : Normal' in chrony_tracking.stdout"
+  register: chrony_tracking
+  until: chrony_tracking.stdout_lines | length > 0 and "Normal" in chrony_tracking.stdout
   ignore_errors: yes
