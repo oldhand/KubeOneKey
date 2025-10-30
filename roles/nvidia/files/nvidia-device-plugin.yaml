@@ -40,3 +40,7 @@ env:
         gpus:
           - name: nvidia.com/gpu
             pattern: "*"
+  - name: NVIDIA_MPS_ENABLED
+    value: "true"
+  - name: NVIDIA_MPS_CONTROL_DEVICE
+    value: "/dev/nvidiactl"
