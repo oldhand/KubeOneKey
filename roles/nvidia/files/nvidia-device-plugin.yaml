@@ -36,6 +36,7 @@ env:
       version: v1
       flags:
         deviceDiscoveryStrategy: nvml  # 显式指定为nvml策略
+        enableMps: true
       resources:
         gpus:
           - name: nvidia.com/gpu
