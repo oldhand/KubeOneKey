@@ -65,6 +65,7 @@
       - wget
       - git
       - tar
+      - unzip
       - telnet
       - bash-completion
       - seccomp
