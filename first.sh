@@ -121,7 +121,11 @@ fi
 # 5. 离线安装 ansible（仅用本地源）
 # --------------------------
 echo "从离线私有源安装 ansible..."
-if [ "$os_name" = "openEuler" ] || [ "$os_name" = "CentOS" ]; then
+if [ "$os_name" = "CentOS" ]; then
+    yum install -y git unzip  --disablerepo=* --enablerepo=ansible-local
+    yum install -y ansible --disablerepo=* --enablerepo=ansible-local
+elif [ "$os_name" = "openEuler" ]; then
+    yum install -y python3-libselinux --disablerepo=* --enablerepo=ansible-local
     yum install -y ansible --disablerepo=* --enablerepo=ansible-local
 else
     apt install -y ansible -o Dir::Etc::sourcelist="sources.list.d/ansible-local.list" -o Dir::Etc::sourceparts="-"
