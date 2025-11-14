@@ -6,7 +6,6 @@
       - tar
       - telnet
       - nc
-      - bash-completion
       - openvswitch
       - python3
       - python3-pip

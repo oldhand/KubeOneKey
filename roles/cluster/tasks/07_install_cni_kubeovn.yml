@@ -25,7 +25,6 @@
     state: absent
   loop:
     - /var/run/openvswitch
-    - /var/run/openvswitch
     - /var/run/ovn
     - /etc/origin/openvswitch/
     - /etc/origin/ovn/
@@ -35,6 +34,41 @@
     - /var/log/ovn
     - /var/log/kube-ovn
   when: (ansible_distribution in ["openEuler", "CentOS"])
+
+- name: "检查 openvswitch 组是否存在"
+  ansible.builtin.command: getent group openvswitch
+  register: ovn_group_check
+  failed_when: false  # 即使组不存在，也不标记任务失败
+  changed_when: false  # 此任务不修改系统状态
+  when: (ansible_distribution in ["openEuler", "CentOS"])
+
+- name: "创建 openvswitch 组（若不存在）"
+  ansible.builtin.group:
+    name: openvswitch
+    state: present
+    system: yes  # 标记为系统组（符合服务组规范）
+  when:
+    - (ansible_distribution in ["openEuler", "CentOS"])
+    - ovn_group_check.rc != 0  # 仅当组不存在时执行（rc=0 表示存在，非0表示不存在）
+
+- name: "检查 openvswitch 用户是否存在"
+  ansible.builtin.command: getent passwd openvswitch
+  register: ovn_user_check
+  failed_when: false  # 即使用户不存在，也不标记任务失败
+  changed_when: false  # 此任务不修改系统状态
+  when: (ansible_distribution in ["openEuler", "CentOS"])
+
+- name: "创建 openvswitch 用户（若不存在）"
+  ansible.builtin.user:
+    name: openvswitch
+    group: openvswitch  # 归属到 openvswitch 组
+    system: yes  # 标记为系统用户（符合服务用户规范）
+    shell: /sbin/nologin  # 禁止登录（服务用户无需登录权限）
+    home: /var/run/openvswitch  # 家目录与运行目录一致
+    create_home: no  # 不自动创建家目录（避免与手动创建的目录冲突）
+  when:
+    - (ansible_distribution in ["openEuler", "CentOS"])
+    - ovn_user_check.rc != 0  # 仅当用户不存在时执行
 
 
 - name: "创建 OVS/OVN 目录"
