@@ -1,9 +1,4 @@
 ---
-- name: disable selinux to permissive
-  command: setenforce 0
-  when: ansible_distribution in ["OpenEuler", "CentOS"]
-  ignore_errors: true
-
 - name: 创建临时目录存放依赖包
   file:
     path: "/home/packages"
