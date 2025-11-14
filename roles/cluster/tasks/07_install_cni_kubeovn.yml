@@ -11,13 +11,13 @@
   yum:
     name: openvswitch
     state: absent
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: 安装 openvswitch package
   yum:
     name: openvswitch
     state: present
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: "清理 OVS/OVN 目录"
   ansible.builtin.file:
@@ -34,7 +34,7 @@
     - /var/log/openvswitch
     - /var/log/ovn
     - /var/log/kube-ovn
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 
 - name: "创建 OVS/OVN 目录"
@@ -54,7 +54,7 @@
     - /etc/ovn
     - /etc/origin/openvswitch
     - /etc/origin/ovn
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 
 - name: 在各节点执行加载 openvswitch 内核模块
@@ -63,7 +63,7 @@
     executable: /bin/bash
   become: yes
   ignore_errors: yes
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Enable and start ovsdb-server service
   systemd:
@@ -71,7 +71,7 @@
     enabled: yes
     state: started
     daemon_reload: yes
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Enable and start ovs-vswitchd service
   systemd:
@@ -79,7 +79,7 @@
     enabled: yes
     state: started
     daemon_reload: yes
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Enable and start openvswitch service
   systemd:
@@ -87,7 +87,7 @@
     enabled: yes
     state: started
     daemon_reload: yes
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Enable and start openvswitch service
   systemd:

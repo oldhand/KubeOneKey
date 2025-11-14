@@ -7,7 +7,7 @@
   when: is_worker == 1
   ignore_errors: yes
 
-- name: Remove kubeadm kubelet kubectl (CentOS or OpenEuler)
+- name: Remove kubeadm kubelet kubectl (CentOS or openEuler)
   yum:
     name:
       - kubeadm
@@ -15,7 +15,7 @@
       - kubelet
       - cri-tools
     state: absent
-  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: is_worker == 1 and (ansible_distribution in ["openEuler", "CentOS"])
   ignore_errors: true
 
 - name: Remove kubeadm kubelet kubectl (Ubuntu)
@@ -31,7 +31,7 @@
   when: is_worker == 1 and ansible_distribution == "Ubuntu"
   ignore_errors: true
 
-- name: Install kubeadm kubelet kubectl (CentOS or OpenEuler)
+- name: Install kubeadm kubelet kubectl (CentOS or openEuler)
   yum: 
     name: 
       - kubeadm
@@ -39,7 +39,7 @@
       - kubelet
       - cri-tools
     state: present
-  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: is_worker == 1 and (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Install kubeadm kubelet kubectl (Ubuntu)
   apt:
@@ -166,13 +166,13 @@
     path: /etc/sysconfig
     state: directory
     mode: '0755'
-  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: is_worker == 1 and (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Kubelet configuration
   copy: 
     src: kubelet
     dest: /etc/sysconfig/kubelet
-  when: is_worker == 1 and (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: is_worker == 1 and (ansible_distribution in ["openEuler", "CentOS"])
 
 
 - name: Kubelet configuration (Ubuntu)

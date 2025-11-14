@@ -27,12 +27,12 @@
     - ansible_distribution == "Ubuntu"
     - nvidia_smi_check.rc == 0
 
-- name: 安装 nvidia-container-runtime（CentOS or OpenEuler）
+- name: 安装 nvidia-container-runtime（CentOS or openEuler）
   yum:
     name:
       - nvidia-container-runtime
       - nvidia-container-toolkit
     state: present
   when:
-    - ansible_distribution in ["OpenEuler", "CentOS"]
+    - ansible_distribution in ["openEuler", "CentOS"]
     - nvidia_smi_check.rc == 0

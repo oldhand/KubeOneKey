@@ -5,7 +5,7 @@
       - ipset
       - ipvsadm
     state: present
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 
 - name: Install ipset and ipvsadm

@@ -1,5 +1,5 @@
 ---
-- name: Install OpenEuler pkgs
+- name: Install openEuler pkgs
   yum:
     name: 
       # Tools
@@ -18,7 +18,7 @@
       # Fixed: ModuleNotFoundError: No module named 'gi'
       - python3-gobject
     state: present
-  when: ansible_distribution == "OpenEuler"
+  when: ansible_distribution == "openEuler"
 
 
 - name: Install CentOS pkgs

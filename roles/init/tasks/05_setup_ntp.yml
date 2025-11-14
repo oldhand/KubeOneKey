@@ -8,13 +8,13 @@
     name: 
       - ntp
     state: absent
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Install chrony package
   yum:
     name: chrony
     state: present
-  when: (ansible_distribution in ["OpenEuler", "CentOS"])
+  when: (ansible_distribution in ["openEuler", "CentOS"])
 
 - name: Remove ntp package
   apt:
