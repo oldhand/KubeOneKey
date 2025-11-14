@@ -11,21 +11,28 @@
 
 #  ansible-galaxy collection install $(pwd)/kubernetes/kubernetes-core-6.1.0.tar.gz --force
 #  pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML
-
+-
+- name: "获得控制节点信息"
+  set_fact:
+    localhost_node: "{{ ansible_default_ipv4.address  }}"
+  delegate_to: localhost
+  run_once: true
 
 - name: 安装 Ansible (Ubuntu)
   apt:
     name:
       - ansible
     state: present
-  when: ansible_distribution == "Ubuntu"
-
+  when:
+    - ansible_distribution == "Ubuntu"
+    - inventory_hostname != localhost_node
 
 - name: 创建临时目录存放 ansible 依赖包
   file:
     path: "/tmp/pip"
     state: directory
     mode: '0755'
+  when: inventory_hostname != localhost_node
 
 - name: 查找 Ansible 所有依赖包文件
   ansible.builtin.find:
@@ -42,12 +49,15 @@
     dest: "/tmp/pip/{{ item | basename }}"
     mode: '0644'
   with_items: "{{ ansible_files.files | map(attribute='path') | list }}"
-  when: ansible_files.files | length > 0  # 确保只在有文件时执行
+  when:
+    - ansible_files.files | length > 0  # 确保只在有文件时执行
+    - inventory_hostname != localhost_node
 
 - name: 将 kubernetes-core-6.1.0.tar.gz 上传到目标节点
   copy:
     src: "{{ playbook_dir }}/kubernetes/kubernetes-core-6.1.0.tar.gz"
     dest: "/tmp/pip/kubernetes-core-6.1.0.tar.gz"
+  when: inventory_hostname != localhost_node
 
 - name: 清理 ansible 的 link 文件
   ansible.builtin.file:
@@ -58,7 +68,9 @@
     - /usr/bin/ansible-galaxy
     - /usr/bin/ansible
   ignore_errors: yes
-  when: ansible_distribution == "CentOS"
+  when:
+    - ansible_distribution == "CentOS"
+    - inventory_hostname != localhost_node
 
 - name: 在 CentOS 安装升级版本的 Ansible
   ansible.builtin.command: "{{ item }}"
@@ -68,13 +80,9 @@
     - ln -s /usr/local/bin/ansible /usr/bin/ansible-playbook
     - ln -s /usr/local/bin/ansible /usr/bin/ansible-galaxy
     - ln -s /usr/local/bin/ansible /usr/bin/ansible
-  when: ansible_distribution == "CentOS"
-
-- name: "获得控制节点信息"
-  set_fact:
-    localhost_node: "{{ ansible_default_ipv4.address  }}"
-  delegate_to: localhost
-  run_once: true
+  when:
+    - ansible_distribution == "CentOS"
+    - inventory_hostname != localhost_node
 
 - name: 安装 kubernetes-core-6.1.0.tar.gz
   ansible.builtin.command: >

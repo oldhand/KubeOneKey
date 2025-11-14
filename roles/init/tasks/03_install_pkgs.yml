@@ -1,10 +1,5 @@
 ---
-
-- name: Gather service facts
-  service_facts:  # 收集系统服务信息
-
-
-- name: Install pkgs
+- name: Install OpenEuler pkgs
   yum:
     name: 
       # Tools
@@ -26,7 +21,7 @@
   when: ansible_distribution == "OpenEuler"
 
 
-- name: Install pkgs
+- name: Install CentOS pkgs
   yum:
     name:
       # Tools
@@ -45,7 +40,7 @@
     state: present
   when: ansible_distribution == "CentOS"
 
-- name: Install pkgs
+- name: Install CentOS pkgs
   yum:
     name:
       - rdma-core
@@ -56,7 +51,7 @@
     state: present
   when: ansible_distribution == "CentOS"
 
-- name: 安装依赖包
+- name: Install Ubuntu pkgs
   apt:
     name:
       - net-tools
