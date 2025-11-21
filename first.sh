@@ -127,6 +127,7 @@ if [ "$os_name" = "CentOS" ]; then
     yum install -y ansible --disablerepo=* --enablerepo=ansible-local
 elif [ "$os_name" = "openEuler" ]; then
     setenforce 0
+    yum install -y dnf --disablerepo=* --enablerepo=ansible-local
     yum install -y python3-libselinux --disablerepo=* --enablerepo=ansible-local
     yum install -y ansible --disablerepo=* --enablerepo=ansible-local
 else
