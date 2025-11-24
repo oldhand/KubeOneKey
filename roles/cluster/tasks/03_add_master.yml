@@ -3,7 +3,7 @@
   include_vars:
     file: /tmp/k8s_join_vars.yml
     name: k8s_join
-  when: (is_master == 1) and (is_init is undefined)  # 主节点且非初始化节点
+  when: (is_master == 1) and (is_init is undefined or is_init == 0)  # 主节点且非初始化节点
 
 - name: Add other master to cluster
   shell: |
@@ -13,12 +13,12 @@
       --discovery-token-ca-cert-hash {{ k8s_join.discovery_token_ca_cert_hash }} \
       --control-plane \
       --certificate-key {{ k8s_join.certificate_key }}
-  when: (is_master == 1) and (is_init is undefined)
+  when: (is_master == 1) and (is_init is undefined or is_init == 0)
 
-- name: Create kube config for all master
-  shell: |
-    mkdir -p $HOME/.kube && \
-    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
-    sudo chown $(id -u):$(id -g) $HOME/.kube/config && \
-    kubectl completion bash > /etc/bash_completion.d/kubectl
-  when: (is_master == 1) and (is_init is undefined)
+#- name: Create kube config for all master
+#  shell: |
+#    mkdir -p $HOME/.kube && \
+#    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
+#    sudo chown $(id -u):$(id -g) $HOME/.kube/config && \
+#    kubectl completion bash > /etc/bash_completion.d/kubectl
+#  when: (is_master == 1) and (is_init is undefined || is_init == 0)
