@@ -1,4 +1,5 @@
 ---
+- include_tasks: 00_kube_clear.yml
 - include_tasks: 01_install_pkgs.yml
 - include_tasks: 02_init_cluster.yml
 - include_tasks: 03_add_master.yml
