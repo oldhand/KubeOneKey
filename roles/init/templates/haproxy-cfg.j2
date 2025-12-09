@@ -1,0 +1,85 @@
+global
+    log         127.0.0.1 local2
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    user        haproxy
+    group       haproxy
+    daemon
+    maxconn     4000
+
+defaults
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    retries                 3
+    timeout http-request    5s
+    timeout queue           1m
+    timeout connect         5s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 5s
+    timeout check           5s
+    maxconn                 3000
+
+# https://www.haproxy.com/documentation/haproxy-configuration-tutorials/alerts-and-monitoring/prometheus/
+frontend stats
+   bind *:8405
+   mode http
+   http-request use-service prometheus-exporter if { path /metrics }
+   no log
+   stats enable
+   stats uri /stats
+   stats refresh 10s
+
+# https://www.kubesphere.io/zh/docs/v3.3/installing-on-linux/high-availability-configurations/set-up-ha-cluster-using-keepalived-haproxy/
+# control-plane endpoint
+frontend k8s-one-key-endpoint
+    bind *:6443
+    mode tcp
+    option tcplog
+    tcp-request inspect-delay 5s
+    default_backend k8s-one-key-endpoint
+
+backend k8s-one-key-endpoint
+    mode tcp
+    option tcp-check
+    balance roundrobin
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+    # 动态生成 Master 节点列表，名称格式: k8s-endpoint-m1, k8s-endpoint-m2...
+    {% for host in groups['k8s'] if hostvars[host].get('is_master') == 1 %}
+server k8s-api-server-m{{ loop.index }} {{ host }}:6443 check
+    {% endfor %}
+frontend k8s-one-key-ingress-80
+    bind *:80
+    mode tcp
+    option tcplog
+    tcp-request inspect-delay 5s
+    default_backend k8s-one-key-ingress-80
+
+backend k8s-one-key-ingress-80
+    mode tcp
+    option tcp-check
+    balance roundrobin
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+    # 动态生成 Ingress 节点列表
+    {% for host in groups['k8s'] if hostvars[host].get('lb_ingress') == 1 %}
+server k8s-ingress-80-{{ loop.index }} {{ host }}:80 check
+    {% endfor %}
+
+frontend k8s-one-key-ingress-443
+    bind *:443
+    mode tcp
+    option tcplog
+    tcp-request inspect-delay 5s
+    default_backend k8s-one-key-ingress-443
+
+backend k8s-one-key-ingress-443
+    mode tcp
+    option tcp-check
+    balance roundrobin
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+    # 动态生成 Ingress 节点列表
+    {% for host in groups['k8s'] if hostvars[host].get('lb_ingress') == 1 %}
+server k8s-ingress-443-{{ loop.index }} {{ host }}:443 check
+    {% endfor %}
+

@@ -1,0 +1,22 @@
+---
+
+- name: "显示主节点数量"
+  ansible.builtin.debug:
+    msg:
+      - "当前模式为高可用模式，需配置负载均衡器"
+      - "主节点数量: {{ master_node_count }}"
+  run_once: true
+
+- name: "高可用模式时，使用 keepalived_vip 覆盖 control_plane_endpoint"
+  set_fact:
+    control_plane_endpoint: "{{ keepalived_vip }}:6443"
+  when:
+    - (master_node_count | int) >= 3
+    - keepalived_vip is defined
+  run_once: true
+
+- name: "显示最终使用的 Control Plane Endpoint"
+  debug:
+    msg:
+      - "最终生效的 API Server 地址: {{ control_plane_endpoint }}"
+  run_once: true

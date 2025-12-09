@@ -1,4 +1,8 @@
 ---
+
+
+keepalived_vip: 192.168.0.88 # 启用IP作为节点名称时，keepalived_vip不能与任何节点IP冲突
+
 ntp_server: 192.168.0.139
 http_server: 192.168.0.139
 dns_server:
@@ -10,6 +14,8 @@ nic_name: "ens33"
 k8s_use_ip_as_nodename: true  # 启用IP作为节点名称
 k8s_master:
   - { ip: "192.168.0.139", hostname: "kube01" }
+  - { ip: "192.168.0.126", hostname: "kube02" }
+  - { ip: "192.168.0.127", hostname: "kube03" }
 
 k8s_os:
   - { name: "Ubuntu", version: "22.04", architecture: "x86_64" }

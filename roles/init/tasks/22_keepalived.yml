@@ -1,0 +1,61 @@
+---
+- name: "获得 keepalived 的主节点与备份节点"
+  set_fact:
+    # 使用 lb_keepalived 变量匹配 hosts.ini
+    keepalived_master_node: "{{ groups['k8s'] | map('extract', hostvars) | selectattr('lb_keepalived', 'defined') | selectattr('lb_keepalived', 'equalto', 'MASTER') | map(attribute='inventory_hostname') | first }}"
+    keepalived_backup_node: "{{ groups['k8s'] | map('extract', hostvars) | selectattr('lb_keepalived', 'defined') | selectattr('lb_keepalived', 'equalto', 'BACKUP') | map(attribute='inventory_hostname') | first }}"
+    run_once: true
+  when:
+    - (is_lb is defined) and is_lb == 1
+    - (master_node_count | int) >= 3
+
+- name: "显示 keepalived 的配置信息"
+  ansible.builtin.debug:
+    msg:
+      - "主节点: {{ keepalived_master_node }}"
+      - "备份节点: {{ keepalived_backup_node }}"
+  run_once: true
+  when:
+    - (is_lb is defined) and is_lb == 1
+    - (master_node_count | int) >= 3
+
+- name: Install CentOS keepalived
+  yum:
+    name:
+      - keepalived
+    state: present
+  when:
+  - ansible_distribution in ["openEuler", "CentOS"]
+  - (is_lb is defined) and is_lb == 1
+  - (master_node_count | int) >= 3
+  - (lb_keepalived is defined) and lb_keepalived in ["MASTER", "BACKUP"]
+
+- name: Install Ubuntu keepalived
+  apt:
+    name:
+      - keepalived
+    state: present
+  when:
+  - ansible_distribution == "Ubuntu"
+  - (is_lb is defined) and is_lb == 1
+  - (master_node_count | int) >= 3
+  - (lb_keepalived is defined) and lb_keepalived in ["MASTER", "BACKUP"]
+
+- name: Generate keepalived.conf
+  template:
+    src: keepalived-conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  when:
+    - (is_lb is defined) and is_lb == 1
+    - (master_node_count | int) >= 3
+    - (lb_keepalived is defined) and lb_keepalived in ["MASTER", "BACKUP"]
+
+- name: Enabld and start keepalived.service
+  systemd:
+    name: keepalived.service
+    state: restarted
+    enabled: true
+  when:
+    - (is_lb is defined) and is_lb == 1
+    - (master_node_count | int) >= 3
+    - (lb_keepalived is defined) and lb_keepalived in ["MASTER", "BACKUP"]

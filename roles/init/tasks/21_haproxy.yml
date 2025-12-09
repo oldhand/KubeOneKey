@@ -1,0 +1,38 @@
+---
+- name: Install CentOS haproxy
+  yum:
+    name:
+      - haproxy
+    state: present
+  when:
+  - ansible_distribution in ["openEuler", "CentOS"]
+  - is_lb is defined and is_lb == 1
+  - (master_node_count | int) >= 3
+
+- name: Install Ubuntu haproxy
+  apt:
+    name:
+      - haproxy
+    state: present
+  when:
+  - ansible_distribution == "Ubuntu"
+  - (is_lb is defined) and is_lb == 1
+  - (master_node_count | int) >= 3
+
+- name: Generate haproxy.cfg
+  template:
+    src: haproxy-cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+  when:
+  - (is_lb is defined) and is_lb == 1
+  - (master_node_count | int) >= 3
+
+
+- name: Enabld and start haproxy.service
+  systemd:
+    name: haproxy.service
+    state: restarted
+    enabled: true
+  when:
+  - (is_lb is defined) and is_lb == 1
+  - (master_node_count | int) >= 3

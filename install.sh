@@ -31,4 +31,4 @@ elif [ "$os_name" = "Ubuntu" ]; then
     fi
 fi
 
-ansible-playbook -i hosts.ini install_k8s.yml -k
+ansible-playbook -i hosts.ini install_k8s.yml

@@ -1,0 +1,44 @@
+! Configuration File for keepalived
+
+global_defs {
+    notification_email {
+    }
+    router_id LVS_DEVEL
+    vrrp_skip_check_adv_addr
+    vrrp_garp_interval 0
+    vrrp_gna_interval 0
+}
+
+! https://www.cnblogs.com/arjenlee/p/9258188.html
+vrrp_script check_haproxy {
+    script "/usr/bin/killall -0 haproxy"
+    interval 2
+    weight 2
+    timeout 2
+    fall 2
+    rise 1
+}
+
+vrrp_instance haproxy-vip {
+    state {{ lb_keepalived }}
+    priority {% if lb_keepalived == "MASTER" %}100{% else %}99{% endif %}
+    
+    interface {{ nic_name }}
+    virtual_router_id 111
+    advert_int 1
+    unicast_src_ip {{ inventory_hostname }}
+    unicast_peer {
+        {% if lb_keepalived == "MASTER" %}{{ keepalived_backup_node }}{% else %}{{ keepalived_master_node }}{% endif %}
+        
+    }
+    authentication {
+        auth_type PASS
+        auth_pass 11111K8S
+    }
+    virtual_ipaddress {
+        {{ keepalived_vip }}
+    }
+    track_script {
+        check_haproxy
+    }
+}
