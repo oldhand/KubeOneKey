@@ -1,9 +1,26 @@
-# Linux系统上的Kubernetes自动化部署工具
+# Kubernetes (K8s) 离线自动化部署工具 (Ansible)
 
-## 仓库简介
-该仓库是一个基于Ansible的自动化部署工具，专为在多个linux系统上部署Kubernetes（k8s）1.29版本集群设计。通过预设的角色和任务流程，可实现集群环境的快速搭建，提高部署效率和一致性。
+## 📖 项目简介
 
-## 支持Linux操作系统列表
+这是一个基于 **Ansible** 的全自动化部署工具，专为在 **Linux** 环境下离线部署 **Kubernetes v1.29** 集群而设计。
+
+该项目不仅支持标准的 K8s 集群部署，还深度集成了 **Kube-OVN** 网络插件、**HAProxy + Keepalived** 高可用架构，以及 **NVIDIA GPU** 和 **Huawei Ascend NPU** 的异构算力支持（通过 HAMI 实现 vGPU 调度）。
+
+
+### ✨ 核心特性
+
+* **完全离线部署**：内置所有依赖包（RPM/Deb）、容器镜像和二进制文件，无需外网。
+* **高可用架构 (HA)**：自动检测节点数量，当主节点 ≥ 3 时，自动配置 HAProxy + Keepalived VIP。
+* **异构算力支持**：
+   * 自动检测并配置 NVIDIA GPU 驱动及插件。
+   * 自动检测并配置 Huawei Ascend (昇腾) NPU 驱动及插件。
+   * 集成 **HAMI** (Heterogeneous AI Computing Virtualization Middleware) 实现算力虚拟化与调度。
+* **网络增强**：默认集成 **Kube-OVN**，提供企业级容器网络能力（子网隔离、固定 IP、QoS 等）。
+* **多系统适配**：同一套脚本支持 CentOS 7.9、Ubuntu 22.04 及 openEuler 22.03 (ARM)。
+
+
+
+## 💻 支持的操作系统
 - **CentOS 7.9 (x86_64)**（已验证）
 - **CentOS 7.7 (x86_64)**（已验证）
 - **Ubuntu 22.04 LTS (x86_64)**（已验证）
@@ -49,17 +66,74 @@ cd <仓库目录>
 ```
 
 
-### 2. 配置主机清单（`hosts.ini`）
-编辑`hosts.ini`文件，定义集群节点角色：
-- `[k8s]`：Kubernetes集群节点，包含：
-  - 主节点（`is_master=1`），其中`is_init=1`的节点为初始化节点（第一个主节点）。
-  - 工作节点（`is_worker=1`）。
 
-示例配置：
+### 2\. 配置主机清单 (`hosts.ini`) [重要]
+
+`hosts.ini` 定义了集群的拓扑结构。请根据您的环境修改 IP 和变量。
+
+#### 变量说明
+
+* `is_master=1`: 标记为主节点 (Control Plane)。
+* `is_worker=1`: 标记为工作节点。
+* `is_init=1`: **仅限一个**主节点设置，用于执行集群初始化命令。
+* **高可用相关 (仅当主节点数量 ≥ 3 时生效)**:
+   * `is_lb=1`: 安装 HAProxy 和 Keepalived。
+   * `lb_keepalived=MASTER`: 标记为 VIP 的主抢占节点 (仅限 1 个)。
+   * `lb_keepalived=BACKUP`: 标记为 VIP 的备用节点 (仅限 1 个)。
+   * `lb_ingress=1`: 该节点将作为 HAProxy 转发 Ingress 流量 (80/443) 的后端目标。
+
+#### 配置示例：3 Master 高可用集群
+
 ```ini
 [k8s]
-192.168.0.106 is_master=1 is_worker=1 is_init=1  # 初始化节点（主节点+工作节点）
-192.168.0.116 is_master=1 is_worker=1            # 其他主节点
+# --- Master 01: 初始化节点 + Keepalived Master ---
+192.168.0.101 is_master=1 is_worker=1 is_init=1 is_lb=1 lb_keepalived=MASTER lb_ingress=1
+
+# --- Master 02: Keepalived Backup ---
+192.168.0.102 is_master=1 is_worker=1 is_lb=1 lb_keepalived=BACKUP lb_ingress=1
+
+# --- Master 03: 普通主节点 ---
+192.168.0.103 is_master=1 is_worker=1 is_lb=1 lb_ingress=1
+
+# --- Worker 节点 (含 GPU/NPU 自动检测) ---
+192.168.0.104 is_worker=1
+192.168.0.105 is_worker=1
+```
+
+### 3\. 全局变量配置 (`roles/init/vars/main.yml`)
+
+修改此文件以适配您的网络环境。
+
+```yaml
+# --- 高可用 VIP 配置 ---
+# 虚拟 IP，用于 API Server 高可用，必须与节点在同一网段且未被占用
+keepalived_vip: 192.168.0.88 
+
+# 绑定 VIP 的网卡名称 (所有 LB 节点网卡名需一致，如 ens33, eth0)
+nic_name: "ens33"
+
+# --- 基础服务 ---
+ntp_server: 192.168.0.139       # 时间同步服务器
+dns_server:                     # 上游 DNS
+  - 114.114.114.114
+  - 8.8.8.8
+
+# --- 节点信息 (用于写入 /etc/hosts) ---
+k8s_master:
+  - { ip: "192.168.0.101", hostname: "kube01" }
+  - { ip: "192.168.0.102", hostname: "kube02" }
+  - { ip: "192.168.0.103", hostname: "kube03" }
+```
+
+### 4\. 集群网络配置 (`roles/cluster/vars/main.yml`)
+
+通常保持默认即可，除非与现有网络冲突。
+
+```yaml
+k8s_version_release: v1.29.3
+pod_cidr: 192.169.0.0/16        # Pod 网络 CIDR
+service_cidr: 172.23.0.0/17     # Service 网络 CIDR
+control_plane_endpoint: "192.168.0.139:6443" # 单节点填真实IP，高可用模式下脚本会自动覆盖为 VIP
 ```
 
 ### 3. 安装前脚本准备
@@ -134,27 +208,7 @@ kubectl get pods -A
         - 停止并删除Kubernetes相关容器及镜像
     - 使用方式：`./kube_clear.sh`
 
-
-### **核心优势**
-1. **全自动化部署**  
-   从环境初始化到集群启动的全流程通过Ansible剧本自动执行，用户仅需配置`hosts.ini`并运行部署命令，大幅减少手动操作和人为错误。
-
-2. **深度适配多个linux系统**  
-   针对系统的特性优化（如系统bug修复、包管理适配），相比通用部署工具（如kubeadm）更稳定可靠。
-
-3. **版本可控与兼容性保障**  
-   明确指定Kubernetes 1.29、Docker 25.0.0等组件版本，通过变量文件（如`roles/cluster/vars/main.yml`）统一管理，避免版本混乱导致的兼容性问题。
-
-4. **离线部署支持**  
-   内置所有依赖安装包和仓库配置，可在无外部网络的环境中部署，适合内网或隔离环境使用。
-
-5. **可扩展性与可配置性**  
-   通过角色变量（如Pod/Service CIDR、VIP地址）支持集群参数自定义，满足不同网络环境和业务需求。
-
-6. **完整的校验与修复机制**  
-   部署过程中包含系统版本校验、组件安装校验、配置文件检查等步骤，出现问题时可通过日志（如`/tmp/kubeadm-init.log`）快速定位。
-
-
+   
 ## 注意事项
 1. **参数调整**：
   - 集群参数（如Pod/Service CIDR、Kubernetes版本）可修改`roles/cluster/vars/main.yml`。 
@@ -165,3 +219,32 @@ kubectl get pods -A
 3. **问题排查**：
   - 部署错误可查看Ansible输出日志，或目标节点上的临时日志（如`/tmp/kubeadm-init.log`）。
   - 若节点加入失败，检查网络连通性、VIP配置及`hosts.ini`参数是否正确。
+
+
+## 🔧 常见问题与维护
+
+### 如何重置集群？
+
+如果部署失败或需要重新部署，请运行根目录下的清理脚本。该脚本会重置 kubeadm、清理 CNI 网络残留和 etcd 数据。
+
+```bash
+./kube_clear.sh
+```
+
+### 高可用是如何工作的？
+
+1.  **判定逻辑**：Ansible 任务 `20_check_lb.yml` 会计算 `master_node_count`。若数量 **\>= 3**，则触发 LB 安装。
+2.  **流量路径**：
+* 客户端 (kubectl/Worker) -\> **VIP (192.168.0.88)** -\> **Keepalived (Master)** -\> **HAProxy (本机)** -\> **API Servers (101, 102, 103)**。
+3.  **配置检查**：
+* HAProxy 配置模板：`roles/init/templates/haproxy-cfg.j2`
+* Keepalived 配置模板：`roles/init/templates/keepalived-conf.j2` (使用单播 Unicast 模式，适应云环境)。
+
+### 算力调度 (HAMI)
+
+项目默认集成了 HAMI (v2.6.1)。它通过 Webhook 拦截 Pod 创建请求，实现 vGPU 切分和显存隔离。
+
+* 配置文件：`roles/hami/files/hami.yaml`
+* 查看状态：`kubectl get pods -n kube-system -l app.kubernetes.io/component=hami-scheduler`
+
+-----
