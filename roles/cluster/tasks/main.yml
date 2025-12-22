@@ -1,10 +1,11 @@
 ---
-- include_tasks: 00_kube_clear.yml
-- include_tasks: 01_install_pkgs.yml
-- include_tasks: 02_configure_endpoint.yml
-- include_tasks: 02_init_cluster.yml
-- include_tasks: 03_add_master.yml
-- include_tasks: 04_add_worker.yml
-- include_tasks: 05_install_helm.yml
-- include_tasks: 06_distribute_kubeconfig.yml
-- include_tasks: 07_install_cni_kubeovn.yml
+- include_tasks: 01_check_config.yml
+- include_tasks: 02_kube_clear.yml
+- include_tasks: 03_install_pkgs.yml
+- include_tasks: 04_configure_endpoint.yml
+- include_tasks: 05_init_cluster.yml
+- include_tasks: 06_add_master.yml
+- include_tasks: 07_add_worker.yml
+- include_tasks: 08_install_helm.yml
+- include_tasks: 09_distribute_kubeconfig.yml
+- include_tasks: 10_install_cni_kubeovn.yml

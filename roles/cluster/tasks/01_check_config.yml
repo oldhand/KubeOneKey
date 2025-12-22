@@ -1,0 +1,95 @@
+---
+- name: "查找集群配置"
+  set_fact:
+    init_node_count: "{{ (groups['k8s'] | map('extract', hostvars, 'is_init') | map('int') | select('equalto', 1) | list | length) }}"
+    master_node_count: "{{ (groups['k8s'] | map('extract', hostvars, 'is_master') | map('int') | select('equalto', 1) | list | length) }}"
+  run_once: true
+
+- name: "显示集群配置信息"
+  ansible.builtin.debug:
+    msg:
+      - "当有初始化节点时，将尝试初始化一个新的集群。"
+      - "当没有初始化节点时，将尝试使用指定集群配置文件 /root/.kube/config 进行加入指定集群操作(仅能工作节点加入，不能加入主节点)。"
+      - "初始化节点数量: {{ init_node_count }}"
+      - "主节点数量: {{ master_node_count }}"
+  run_once: true
+
+- name: "查找初始节点"
+  set_fact:
+    init_node_name: "{{ groups['k8s'] | map('extract', hostvars) | selectattr('is_init', 'defined') | selectattr('is_init', 'equalto', '1') | map(attribute='inventory_hostname') | first }}"
+  run_once: true
+  when: (init_node_count | int) > 0
+
+- name: "显示初始节点信息"
+  ansible.builtin.debug:
+    msg:
+      - "初始化节点: {{ init_node_name }}"
+  run_once: true
+  when: (init_node_count | int) > 0
+
+- name: 【没有初始化节点时】报错：无法获取加入集群的配置信息
+  fail:
+    msg:
+      - "当没有初始化节点时，加入指定集群, 仅能以工作节点加入，不能加入主节点。"
+      - "当没有初始化节点时，不能有配置主节点。"
+  run_once: true
+  when:
+    - (init_node_count | int) == 0
+    - (master_node_count | int) > 0
+
+
+- name: 【没有初始化节点时】检查是否存在 /root/.kube/config
+  stat:
+    path: "/root/.kube/config"
+  register: kube_config_file
+  run_once: true
+  delegate_to: localhost
+  when: (init_node_count | int) == 0
+
+
+- name: 【没有初始化节点时】从 kubeconfig 生成加入命令 (仅用于 Worker)
+  shell: |
+    kubeadm token create --print-join-command --kubeconfig /root/.kube/config
+  register: join_command_output
+  run_once: true
+  delegate_to: localhost
+  when:
+    - (init_node_count | int) == 0
+    - kube_config_file.stat.exists
+  ignore_errors: yes
+
+- name: 【没有初始化节点时】提取 Token 和 Hash
+  set_fact:
+    # 正则匹配 kubeadm join <endpoint> --token <token> --discovery-token-ca-cert-hash <hash>
+    generated_token: "{{ join_command_output.stdout | regex_search('--token ([a-z0-9.]+)', '\\1') | first }}"
+    generated_hash: "{{ join_command_output.stdout | regex_search('--discovery-token-ca-cert-hash ([a-z0-9.:]+)', '\\1') | first }}"
+  when:
+    - (init_node_count | int) == 0
+    - kube_config_file.stat.exists
+    - join_command_output.rc == 0
+
+- name: 【没有初始化节点时】生成临时 k8s_join_vars.yml
+  copy:
+    content: |
+      # 自动生成自 /root/.kube/config
+      kubeadm_token: "{{ generated_token }}"
+      discovery_token_ca_cert_hash: "{{ generated_hash }}"
+      # 注意：从 kubeconfig 无法生成 certificate_key，添加 Master 节点可能会失败
+      certificate_key: ""
+    dest: "/tmp/k8s_join_vars.yml"
+    mode: '0644'
+  when:
+    - (init_node_count | int) == 0
+    - kube_config_file.stat.exists
+    - join_command_output.rc == 0
+
+
+- name: 向所有节点分发集群加入变量文件
+  copy:
+    src: /tmp/k8s_join_vars.yml  # 控制节点上的变量文件（步骤1拉取的）
+    dest: /tmp/k8s_join_vars.yml  # 目标节点的存储路径
+    mode: '0644'
+  when:
+    - (init_node_count | int) == 0
+    - kube_config_file.stat.exists
+    - join_command_output.rc == 0
