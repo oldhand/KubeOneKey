@@ -14,9 +14,10 @@
       - "主节点数量: {{ master_node_count }}"
   run_once: true
 
+
 - name: "查找初始节点"
   set_fact:
-    init_node_name: "{{ groups['k8s'] | map('extract', hostvars) | selectattr('is_init', 'defined') | selectattr('is_init', 'equalto', '1') | map(attribute='inventory_hostname') | first }}"
+    init_node_name: "{{ groups['k8s'] | map('extract', hostvars) | selectattr('is_init', 'defined') | selectattr('is_init', 'in', [1, '1']) | map(attribute='inventory_hostname') | first }}"
   run_once: true
   when: (init_node_count | int) > 0
 
