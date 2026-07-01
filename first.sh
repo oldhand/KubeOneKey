@@ -60,8 +60,12 @@ elif [ "$os_name" = "openEuler" ]; then
 elif [ "$os_name" = "Ubuntu" ]; then
     # DEB 系：离线安装 dpkg-dev 及其依赖（包已在 dest_pkg_dir 中）
     echo "离线安装 dpkg-dev 工具..."
-    # 安装目录下所有 DEB 包（包含 dpkg-dev 及依赖）
-    sudo dpkg -i "$dest_pkg_dir"/dpkg-dev_1.21.1ubuntu2.3_all.deb
+    # 仅安装 dpkg-dev 及其核心依赖以启用 dpkg-scanpackages，避免破坏系统已有的工具链（如 binutils）
+    sudo dpkg -i "$dest_pkg_dir"/dpkg-dev_*.deb \
+                 "$dest_pkg_dir"/libdpkg-perl_*.deb \
+                 "$dest_pkg_dir"/lto-disabled-list_*.deb 2>/dev/null || \
+    sudo dpkg -i "$dest_pkg_dir"/dpkg-dev_*.deb \
+                 "$dest_pkg_dir"/libdpkg-perl_*.deb
 else
     echo "错误：不支持的操作系统 - $os_name"
     exit 1
@@ -131,7 +135,7 @@ elif [ "$os_name" = "openEuler" ]; then
     yum install -y python3-libselinux --disablerepo=* --enablerepo=ansible-local
     yum install -y ansible --disablerepo=* --enablerepo=ansible-local
 else
-    apt install -y ansible -o Dir::Etc::sourcelist="sources.list.d/ansible-local.list" -o Dir::Etc::sourceparts="-"
+    apt install -y ansible python3-pip sshpass -o Dir::Etc::sourcelist="sources.list.d/ansible-local.list" -o Dir::Etc::sourceparts="-"
 fi
 
 # 验证安装结果
@@ -155,5 +159,5 @@ if [ "$os_name" = "CentOS" ]; then
     pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML
 else
   ansible-galaxy collection install $(pwd)/kubernetes/kubernetes-core-6.1.0.tar.gz --force
-  pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML
+  pip3 install --no-index --find-links=$(pwd)/pip/$os_name kubernetes PyYAML --break-system-packages
 fi

@@ -91,5 +91,5 @@
 
 - name: pip3 安装 kubernetes PyYAML
   ansible.builtin.command: >
-    pip3 install --no-index --find-links=/tmp/pip/ kubernetes PyYAML
+    pip3 install --no-index --find-links=/tmp/pip/ kubernetes PyYAML {{ '--break-system-packages' if ansible_distribution == 'Ubuntu' else '' }}
   when: inventory_hostname != localhost_node

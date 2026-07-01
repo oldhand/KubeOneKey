@@ -18,6 +18,7 @@ curl
 dpkg-dev
 ethtool
 git
+dpkg-dev
 ipset
 ipvsadm
 ipython3
