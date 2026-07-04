@@ -14,7 +14,7 @@
 -
 - name: "获得控制节点信息"
   set_fact:
-    localhost_node: "{{ ansible_default_ipv4.address  }}"
+    localhost_node: "{{ (ansible_default_ipv4 | default({})).get('address') | default((ansible_all_ipv4_addresses | default([])) | first | default('127.0.0.1')) }}"
   delegate_to: localhost
   run_once: true
 

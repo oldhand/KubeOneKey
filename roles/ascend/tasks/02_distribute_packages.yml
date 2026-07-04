@@ -3,6 +3,7 @@
   stat:
     path: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/ascend-k8sdeviceplugin_v7.1.RC1.tar"
   register: target_tar_stat
+  delegate_to: localhost
   run_once: true
 
 - name: 解压镜像文件 ascend-k8sdeviceplugin_v7.1.RC1.tar.gz
@@ -10,6 +11,7 @@
     src: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/ascend-k8sdeviceplugin_v7.1.RC1.tar.gz"
     dest: "{{ playbook_dir }}/ascend/{{ ansible_architecture }}/"
     remote_src: yes  # 源文件在目标主机本地
+  delegate_to: localhost
   run_once: true  # 控制节点执行一次
   when: not target_tar_stat.stat.exists  # 仅tar不存在时执行
 

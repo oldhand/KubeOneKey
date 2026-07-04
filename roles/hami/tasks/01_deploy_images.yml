@@ -10,6 +10,7 @@
     path: "{{ playbook_dir }}/hami/{{ ansible_architecture }}"
     state: directory
     mode: '0755'
+  delegate_to: localhost
 
 - name: 设置依赖的镜像
   ansible.builtin.set_fact:
@@ -22,12 +23,14 @@
   stat:
     path: "{{ playbook_dir }}/hami/{{ ansible_architecture }}/projecthami_hami_v2.6.1.tar"
   register: projecthami_hami_tar_stat
+  delegate_to: localhost
   run_once: true
 
 - name: 检查 hami.zip.001 是否存在
   stat:
     path: "{{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip.001"
   register: hami_zip_stat
+  delegate_to: localhost
   run_once: true
 
 
@@ -35,7 +38,7 @@
   shell: |
     # 合并分卷为完整zip文件
     cat {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip.001 \
-        {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip.002 \ 
+        {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip.002 \
         > {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip
     
     # 解压zip到目标目录（确保tar直接生成在该目录）
@@ -44,6 +47,7 @@
     
     # 清理临时zip文件
     rm -f {{ playbook_dir }}/hami/{{ ansible_architecture }}/hami.zip
+  delegate_to: localhost
   run_once: true  # 控制节点执行一次
   when:
     - not projecthami_hami_tar_stat.stat.exists  # projecthami_hami_v2.6.1.tar 不存在时执行

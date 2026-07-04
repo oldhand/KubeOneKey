@@ -37,6 +37,7 @@
     helm upgrade --install hami /tmp/hami_offline_install/hami-{{ hami_version | replace('v', '') }}.tgz \
     --namespace kube-system \
     --create-namespace \
+    --timeout 10m0s \
     -f /tmp/hami_offline_install/hami.yaml
   register: install_hami
   changed_when: "'installed' in install_hami.stdout"

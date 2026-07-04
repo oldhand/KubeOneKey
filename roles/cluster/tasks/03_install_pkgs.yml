@@ -61,6 +61,7 @@
     path: "{{ playbook_dir }}/images/{{ ansible_architecture }}/kube-apiserver-v1.29.3.tar"
   register: target_tar_stat
   run_once: true
+  delegate_to: localhost
 
 
 - name: 合并分卷并解压生成镜像文件 (aarch64)
@@ -79,6 +80,7 @@
     # 清理临时zip文件
     rm -f {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
   run_once: true  # 控制节点执行一次
+  delegate_to: localhost
   when: not target_tar_stat.stat.exists and ansible_architecture == "aarch64"
 
 - name: 合并分卷并解压生成镜像文件 (x86_64)
@@ -98,6 +100,7 @@
     # 清理临时zip文件
     rm -f {{ playbook_dir }}/images/{{ ansible_architecture }}/images.zip
   run_once: true  # 控制节点执行一次
+  delegate_to: localhost
   when: not target_tar_stat.stat.exists and ansible_architecture == "x86_64"
 
 # 新增任务：加载本地Kubernetes镜像,在ARM与X86架构下分别处理，etcd与coredns版本各不相同
