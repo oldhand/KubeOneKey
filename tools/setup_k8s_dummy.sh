@@ -6,6 +6,8 @@
 INTERFACE_NAME="k8s-dummy"
 IP_ADDRESS="192.168.100.100"
 SUBNET_MASK="/32"
+# 新增：Kubernetes Service CIDR 网段，用于离线状态下的 ClusterIP 路由绑定
+SERVICE_CIDR="172.23.0.0/17"
 
 # ==========================================
 # 1. 环境检查
@@ -15,7 +17,7 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-echo "🚀 开始配置虚拟网卡 (纯 Systemd 强力模式)..."
+echo "🚀 开始配置虚拟网卡 (支持离线 k8s 路由优化版)..."
 
 # ==========================================
 # 2. 环境清理 (防冲突)
@@ -36,7 +38,7 @@ EOF
 modprobe dummy
 
 # ==========================================
-# 4. 创建 Systemd 强力接管服务
+# 4. 创建 Systemd 服务 (集成离线路由修复)
 # ==========================================
 echo "⚙️ 3/4 正在创建 systemd 自动化网络服务..."
 cat <<EOF > /etc/systemd/system/${INTERFACE_NAME}.service
@@ -60,6 +62,9 @@ ExecStart=/sbin/ip addr add ${IP_ADDRESS}${SUBNET_MASK} dev ${INTERFACE_NAME}
 # 4. 强制启动网卡
 ExecStartPost=/sbin/ip link set dev ${INTERFACE_NAME} up
 
+# 5. 添加 Service CIDR 路由，确保无网络时 ClusterIP (如 172.23.0.1) 能够正确路由并完成 iptables 转发
+ExecStartPost=-/sbin/ip route add ${SERVICE_CIDR} dev ${INTERFACE_NAME}
+
 # 停止服务时的清理动作
 ExecStop=/sbin/ip link delete ${INTERFACE_NAME} type dummy
 
@@ -79,8 +84,11 @@ systemctl enable --now ${INTERFACE_NAME}.service
 # ==========================================
 # 6. 验证结果
 # ==========================================
-echo -e "\n✅ 部署完成！网卡和 IP 已成功挂载，且重启永久生效。"
+echo -e "\n✅ 部署完成！网卡、IP 以及 Service 路由已成功挂载，且重启永久生效。"
 echo "当前网络状态如下："
 echo "----------------------------------------------------"
 ip -4 addr show "${INTERFACE_NAME}"
+echo "----------------------------------------------------"
+echo "当前关联路由状态："
+ip route show dev "${INTERFACE_NAME}"
 echo "----------------------------------------------------"
